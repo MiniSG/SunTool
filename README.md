@@ -2,6 +2,10 @@
 
 C# / WPF(.NET 8) 기반 포터블 윈도우 유틸리티입니다. 기능을 모듈 단위로 추가할 수 있습니다.
 
+- 저장소: https://github.com/MiniSG/SunTool
+- 라이선스: [MIT](LICENSE)
+- 사용 매뉴얼: [docs/SunTool_사용매뉴얼.pptx](docs/SunTool_사용매뉴얼.pptx)
+
 ## 기능
 
 | 모듈 | 설명 |
@@ -73,3 +77,17 @@ MVVM 원칙:
 2. `RenameRuleBase`에 `[JsonDerivedType(typeof(MyRule), "my")]`를 추가합니다. 프리셋 저장에 필요합니다.
 3. `RuleCatalog.All`에 항목을 추가합니다.
 4. `BatchRenameView.xaml`의 Resources에 `DataType="{x:Type rules:MyRule}"` 편집 템플릿을 추가합니다.
+
+## 소스 받기 / 기여
+
+```powershell
+git clone https://github.com/MiniSG/SunTool.git
+cd SunTool
+dotnet build
+```
+
+버그나 감지되지 않는 SDK는 GitHub Issues에 남겨 주세요. 시스템 정보 감지 문제라면 F12 터미널의 `programs <이름>` 결과를 함께 붙이면 빠르게 확인할 수 있습니다.
+
+## 라이선스
+
+[MIT License](LICENSE) © 2026 MiniSG. 개인·회사·상업 용도로 자유롭게 사용·수정·배포할 수 있으며, 배포할 때 저작권 표시와 라이선스 문구를 함께 포함하면 됩니다. 프로그램은 "있는 그대로" 제공되며 사용으로 생긴 문제에 대해 저작자는 책임지지 않습니다.

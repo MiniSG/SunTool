@@ -105,7 +105,7 @@ pres.addSection({ title: "시작하기" });
   s.addText(
     [
       { text: "폴더 구조 복제 · 파일 이름 일괄 변경 · 이벤트 로그 조회 · 시스템 정보", options: { breakLine: true } },
-      { text: "v2026.11.09  ·  2026년 11월", options: { fontSize: 14 } },
+      { text: "v2026.11.09  ·  2026년 11월  ·  github.com/MiniSG/SunTool", options: { fontSize: 14 } },
     ],
     { placeholder: "body" }
   );
@@ -722,9 +722,74 @@ pres.addSection({ title: "빌드 환경" });
   s.addText("이름 변경 규칙도 같은 방식으로 추가합니다 (README.md 참고).", { x: 7.4, y: 6.15, w: 5.2, h: 0.7, fontSize: 14, color: C.text1, valign: "middle", margin: 0, isTextBox: true, objectName: "extNote" });
 }
 
+// ===== GitHub 저장소와 라이선스 =====
+pres.addSection({ title: "소스 코드" });
+{
+  const s = contentSlide("소스 코드", "소스 코드 · GitHub", "GitHub에서 받기와 라이선스");
+
+  // 왼쪽: 저장소 주소 + 명령
+  card(s, 0.6, 1.55, 6.3, 1.2, "EEF3FE");
+  iconCircle(s, 0.88, 1.85, 0.6, String.fromCharCode(0xE774), C.accent1);
+  s.addText(
+    [
+      { text: "공개 저장소", options: { bold: true, fontSize: 14, color: C.text2, breakLine: true } },
+      { text: "github.com/MiniSG/SunTool", options: { bold: true, fontSize: 22, color: C.accent1, hyperlink: { url: "https://github.com/MiniSG/SunTool" } } },
+    ],
+    { x: 1.7, y: 1.55, w: 5.1, h: 1.2, valign: "middle", margin: 0, isTextBox: true, objectName: "repoUrl" }
+  );
+
+  s.addShape(pres.shapes.ROUNDED_RECTANGLE, { x: 0.6, y: 2.95, w: 6.3, h: 3.9, rectRadius: 0.12, fill: { color: "0D1117" }, line: { color: "0D1117" }, objectName: "gitCodeBg" });
+  const code = [
+    ["# 소스 받기", "8B949E"],
+    ["git clone https://github.com/MiniSG/SunTool.git", "E6EDF3"],
+    ["cd SunTool", "E6EDF3"],
+    ["dotnet build", "E6EDF3"],
+    ["", "E6EDF3"],
+    ["# 최신 코드로 갱신", "8B949E"],
+    ["git pull", "E6EDF3"],
+    ["", "E6EDF3"],
+    ["# 고친 내용 올리기 (저장소 권한 필요)", "8B949E"],
+    ["git add -A", "E6EDF3"],
+    ["git commit -m \"변경 내용\"", "E6EDF3"],
+    ["git push", "F2A93B"],
+  ];
+  s.addText(
+    code.map(([t, col], i) => ({ text: t || " ", options: { color: col, breakLine: i < code.length - 1 } })),
+    { x: 0.85, y: 3.15, w: 5.9, h: 3.55, fontFace: MONO, fontSize: 13, valign: "top", margin: 0, isTextBox: true, objectName: "gitCode" }
+  );
+
+  // 오른쪽: MIT 라이선스
+  card(s, 7.25, 1.55, 5.5, 5.3);
+  s.addText("MIT 라이선스", { x: 7.55, y: 1.78, w: 4.9, h: 0.42, fontSize: 18, bold: true, color: C.text1, margin: 0, isTextBox: true, objectName: "licHead" });
+  const lic = [
+    [String.fromCharCode(0xE73E), C.accent3, C.background1, "누구나 자유롭게", "개인·회사·상업 용도로 사용, 수정, 재배포 가능. 고친 코드를 공개할 의무 없음"],
+    [String.fromCharCode(0xE8A5), C.accent2, C.text1, "조건은 하나", "배포할 때 저작권 표시(© 2026 MiniSG)와 라이선스 문구를 함께 포함"],
+    [String.fromCharCode(0xE7BA), C.accent6, C.background1, "보증 없음", "프로그램은 있는 그대로 제공되며, 사용으로 생긴 문제는 저작자가 책임지지 않음"],
+  ];
+  lic.forEach(([g, fill, color, t, d], i) => {
+    const y = 2.4 + i * 1.18;
+    iconCircle(s, 7.55, y, 0.52, g, fill, color);
+    s.addText(
+      [
+        { text: t, options: { bold: true, fontSize: 15, color: C.text1, breakLine: true } },
+        { text: d, options: { fontSize: 13, color: C.text2 } },
+      ],
+      { x: 8.25, y: y - 0.05, w: 4.3, h: 1.05, valign: "top", margin: 0, isTextBox: true, objectName: nm("lic") }
+    );
+  });
+  s.addText(
+    [
+      { text: "문제 제보  ", options: { bold: true, color: C.accent1 } },
+      { text: "GitHub Issues에 남겨 주세요. SDK 감지 문제는 F12 터미널의 programs 결과를 함께 붙이면 빠릅니다.", options: { color: C.text2 } },
+    ],
+    { x: 7.55, y: 5.95, w: 4.95, h: 0.75, fontSize: 13, valign: "top", margin: 0, isTextBox: true, objectName: "issueNote" }
+  );
+}
+
 // ===== 15. 문제 해결 =====
 {
-  const s = contentSlide("빌드 환경", "도움말", "자주 묻는 질문");
+  pres.addSection({ title: "도움말" });
+  const s = contentSlide("도움말", "도움말", "자주 묻는 질문");
   const faq = [
     ["끌어다 놓기가 안 돼요", "관리자 권한으로 실행했는지 확인하세요. 일반 더블클릭으로 다시 실행하면 됩니다."],
     ["실행할 때 파란 경고창이 떠요", "서명되지 않은 exe 라서 나오는 Windows 경고입니다. [추가 정보] → [실행]."],
