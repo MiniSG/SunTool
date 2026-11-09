@@ -92,7 +92,7 @@
                          Text="{Binding CommandText, UpdateSourceTrigger=PropertyChanged}"
                          FontFamily="{StaticResource MonoFont}" FontSize="13"
                          Style="{StaticResource ConsoleText}"
-                         ToolTip="{l:T '명령 입력 후 Enter (\'help\' 로 목록 확인, ↑↓ 이전 명령)'}">
+                         ToolTip="{l:T &quot;명령 입력 후 Enter ('help' 로 목록 확인, ↑↓ 이전 명령)&quot;}">
                     <TextBox.InputBindings>
                         <KeyBinding Key="Enter" Command="{Binding ExecuteCommandCommand}" />
                         <KeyBinding Key="Up" Command="{Binding HistoryPreviousCommand}" />

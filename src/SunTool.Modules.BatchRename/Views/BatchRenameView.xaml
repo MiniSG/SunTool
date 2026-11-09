@@ -64,7 +64,9 @@
                         <TextBox Text="{Binding Padding, UpdateSourceTrigger=PropertyChanged}" />
                     </StackPanel>
                 </Grid>
-                <TextBlock Text="{l:T '번호 서식 (\{n\} 자리에 번호, 예: _\{n\}  (\{n\})  -\{n\}-)'}" Style="{StaticResource FieldLabel}" />
+                <TextBlock Style="{StaticResource FieldLabel}">
+                    <TextBlock.Text><l:T Key="{}번호 서식 ({n} 자리에 번호, 예: _{n}  ({n})  -{n}-)" /></TextBlock.Text>
+                </TextBlock>
                 <TextBox Text="{Binding Format, UpdateSourceTrigger=PropertyChanged}" />
                 <CheckBox Content="{l:T '기존 이름을 지우고 번호(서식)만 사용'}" IsChecked="{Binding ReplaceName}" Margin="0,8,0,0" />
                 <CheckBox Content="{l:T '폴더마다 번호를 새로 시작 (하위 폴더 포함 시)'}" IsChecked="{Binding PerFolder}" />
@@ -136,11 +138,15 @@
                         <ColumnDefinition />
                     </Grid.ColumnDefinitions>
                     <StackPanel Grid.Column="0">
-                        <TextBlock Text="{l:T '\{n\} 시작 번호'}" Style="{StaticResource FieldLabel}" />
+                        <TextBlock Style="{StaticResource FieldLabel}">
+                            <TextBlock.Text><l:T Key="{}{n} 시작 번호" /></TextBlock.Text>
+                        </TextBlock>
                         <TextBox Text="{Binding Start, UpdateSourceTrigger=PropertyChanged}" />
                     </StackPanel>
                     <StackPanel Grid.Column="2">
-                        <TextBlock Text="{l:T '\{n\} 증가값'}" Style="{StaticResource FieldLabel}" />
+                        <TextBlock Style="{StaticResource FieldLabel}">
+                            <TextBlock.Text><l:T Key="{}{n} 증가값" /></TextBlock.Text>
+                        </TextBlock>
                         <TextBox Text="{Binding Step, UpdateSourceTrigger=PropertyChanged}" />
                     </StackPanel>
                 </Grid>
@@ -294,8 +300,18 @@
                     <Border DockPanel.Dock="Bottom" Background="{StaticResource SurfaceAltBrush}" BorderBrush="{StaticResource LineBrush}"
                             BorderThickness="1" CornerRadius="5" Padding="12" Margin="0,10,0,0">
                         <StackPanel>
-                            <TextBlock Text="{Binding SelectedRule.RuleName, StringFormat={l:T '\{0\} 설정'}, FallbackValue={l:T '규칙을 추가하거나 선택하세요'}}"
-                                       FontWeight="SemiBold" Margin="0,0,0,8" />
+                            <TextBlock FontWeight="SemiBold" Margin="0,0,0,8">
+                                <TextBlock.Text>
+                                    <Binding Path="SelectedRule.RuleName">
+                                        <Binding.StringFormat>
+                                            <l:T Key="{}{0} 설정" />
+                                        </Binding.StringFormat>
+                                        <Binding.FallbackValue>
+                                            <l:T Key="규칙을 추가하거나 선택하세요" />
+                                        </Binding.FallbackValue>
+                                    </Binding>
+                                </TextBlock.Text>
+                            </TextBlock>
                             <!-- 설정이 길어도 규칙 목록 공간을 남기도록 높이 제한 + 스크롤 -->
                             <ScrollViewer MaxHeight="210" VerticalScrollBarVisibility="Auto" Focusable="False">
                                 <ContentControl Content="{Binding SelectedRule}" Focusable="False" Margin="0,0,4,0" />
