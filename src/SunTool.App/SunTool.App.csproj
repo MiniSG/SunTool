@@ -1,0 +1,35 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <AssemblyName>SunTool</AssemblyName>
+    <RootNamespace>SunTool.App</RootNamespace>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <!-- exe 파일 아이콘 (tools\make-icon.ps1 로 생성) -->
+    <ApplicationIcon>Assets\SunTool.ico</ApplicationIcon>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- 창 제목 표시줄·작업 표시줄 아이콘, 사이드바 로고 -->
+    <Resource Include="Assets\SunTool.ico" />
+    <Resource Include="Assets\SunTool-256.png" />
+  </ItemGroup>
+
+  <!-- 포터블 단일 exe 배포는 저장소 루트의 publish.ps1 참고 -->
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\SunTool.Core\SunTool.Core.csproj" />
+    <ProjectReference Include="..\SunTool.Wpf\SunTool.Wpf.csproj" />
+    <ProjectReference Include="..\SunTool.Modules.FolderReplicator\SunTool.Modules.FolderReplicator.csproj" />
+    <ProjectReference Include="..\SunTool.Modules.BatchRename\SunTool.Modules.BatchRename.csproj" />
+    <ProjectReference Include="..\SunTool.Modules.EventLogViewer\SunTool.Modules.EventLogViewer.csproj" />
+    <ProjectReference Include="..\SunTool.Modules.SystemInfo\SunTool.Modules.SystemInfo.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,22 @@
+<Project>
+  <PropertyGroup>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Company>SunTool</Company>
+    <Product>SunTool</Product>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+  </PropertyGroup>
+
+  <!--
+    버전 = 빌드한 날짜.
+    표시용(InformationalVersion): 2026.11.09 / 어셈블리·파일 버전: 2026.11.9
+    같은 날 다시 빌드하면 같은 버전이 됩니다.
+  -->
+  <PropertyGroup>
+    <SunToolBuildDate>$([System.DateTime]::Now.ToString('yyyy.MM.dd'))</SunToolBuildDate>
+    <Version>$([System.DateTime]::Now.ToString('yyyy.M.d'))</Version>
+    <InformationalVersion>$(SunToolBuildDate)</InformationalVersion>
+    <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
+  </PropertyGroup>
+</Project>

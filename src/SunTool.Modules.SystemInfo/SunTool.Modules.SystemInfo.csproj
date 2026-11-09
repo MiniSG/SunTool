@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <RootNamespace>SunTool.Modules.SystemInfo</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- WMI (CPU, 메모리, 보드, 장치 목록 등) -->
+    <PackageReference Include="System.Management" Version="8.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- 감지할 소프트웨어 기본 목록 (exe 옆 SunTool.software.json 으로 추가/덮어쓰기 가능) -->
+    <EmbeddedResource Include="Definitions\software.json" LogicalName="SunTool.SystemInfo.software.json" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\SunTool.Core\SunTool.Core.csproj" />
+    <ProjectReference Include="..\SunTool.Wpf\SunTool.Wpf.csproj" />
+  </ItemGroup>
+
+</Project>

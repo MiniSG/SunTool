@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <RootNamespace>SunTool.Modules.EventLogViewer</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- System.Diagnostics.Eventing.Reader (Windows 이벤트 로그 XPath 조회) -->
+    <PackageReference Include="System.Diagnostics.EventLog" Version="8.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\SunTool.Core\SunTool.Core.csproj" />
+    <ProjectReference Include="..\SunTool.Wpf\SunTool.Wpf.csproj" />
+  </ItemGroup>
+
+</Project>

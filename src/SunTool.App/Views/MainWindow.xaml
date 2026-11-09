@@ -1,0 +1,131 @@
+<Window x:Class="SunTool.App.Views.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:app="clr-namespace:SunTool.App"
+        xmlns:vm="clr-namespace:SunTool.App.ViewModels"
+        mc:Ignorable="d"
+        d:DataContext="{d:DesignInstance Type=vm:MainViewModel}"
+        Title="{Binding AppTitle}"
+        Icon="/SunTool;component/Assets/SunTool.ico"
+        Width="1280" Height="820" MinWidth="980" MinHeight="620"
+        WindowStartupLocation="CenterScreen"
+        FontFamily="Malgun Gothic, Segoe UI" FontSize="13"
+        Background="{StaticResource AppBackgroundBrush}">
+
+    <Window.InputBindings>
+        <KeyBinding Key="F12" Command="{Binding ToggleConsoleCommand}" />
+        <KeyBinding Key="OemTilde" Modifiers="Control" Command="{Binding ToggleConsoleCommand}" />
+    </Window.InputBindings>
+
+    <Window.Resources>
+        <app:ViewLocator x:Key="ViewLocator" />
+    </Window.Resources>
+
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="230" />
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <!-- ===== 사이드바 ===== -->
+        <Border Grid.Column="0" Grid.Row="0" Background="{StaticResource SidebarBrush}">
+            <DockPanel>
+                <DockPanel DockPanel.Dock="Top" Margin="18,20,20,18">
+                    <Image DockPanel.Dock="Left" Source="/SunTool;component/Assets/SunTool-256.png" Width="36" Height="36"
+                           Margin="0,0,10,0" VerticalAlignment="Center" RenderOptions.BitmapScalingMode="HighQuality" />
+                    <StackPanel VerticalAlignment="Center">
+                        <TextBlock Text="SunTool" FontSize="20" FontWeight="Bold" Foreground="White" />
+                        <TextBlock Text="{Binding Version}" Foreground="{StaticResource SidebarTextBrush}" FontSize="11" Opacity="0.7" />
+                    </StackPanel>
+                </DockPanel>
+
+                <!-- 하단: 터미널 버튼 -->
+                <StackPanel DockPanel.Dock="Bottom" Margin="0,0,0,12">
+                    <Separator Margin="14,0,14,8" Background="#39404F" />
+                    <Button Style="{StaticResource SidebarButton}" Command="{Binding ToggleConsoleCommand}"
+                            ToolTip="로그를 보고 명령을 실행하는 디버그 터미널 (F12)">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="&#xE756;" FontFamily="{StaticResource IconFont}" FontSize="15" VerticalAlignment="Center" Margin="0,0,12,0" />
+                            <TextBlock Text="터미널 / 로그" VerticalAlignment="Center" />
+                            <TextBlock Text="F12" Margin="10,0,0,0" Opacity="0.5" FontSize="11" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
+
+                <TextBlock DockPanel.Dock="Top" Text="기능" Margin="20,0,0,6" FontSize="11" Foreground="{StaticResource SidebarTextBrush}" Opacity="0.6" />
+
+                <ListBox ItemsSource="{Binding Modules}"
+                         SelectedItem="{Binding SelectedModule}"
+                         ItemContainerStyle="{StaticResource SidebarItem}"
+                         Background="Transparent" BorderThickness="0"
+                         ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate DataType="{x:Type vm:ModuleItemViewModel}">
+                            <StackPanel Orientation="Horizontal" ToolTip="{Binding Description}">
+                                <TextBlock Text="{Binding IconGlyph}" FontFamily="{StaticResource IconFont}" FontSize="15" VerticalAlignment="Center" Margin="0,0,12,0" />
+                                <TextBlock Text="{Binding DisplayName}" VerticalAlignment="Center" />
+                            </StackPanel>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+            </DockPanel>
+        </Border>
+
+        <!-- ===== 본문 ===== -->
+        <DockPanel Grid.Column="1" Grid.Row="0">
+            <Border DockPanel.Dock="Top" Background="{StaticResource SurfaceBrush}" BorderBrush="{StaticResource LineBrush}" BorderThickness="0,0,0,1" Padding="20,14">
+                <StackPanel>
+                    <TextBlock Text="{Binding SelectedModule.DisplayName}" FontSize="18" FontWeight="SemiBold" />
+                    <TextBlock Text="{Binding SelectedModule.Description}" Style="{StaticResource HintText}" Margin="0,3,0,0" />
+                </StackPanel>
+            </Border>
+            <ContentControl Content="{Binding CurrentViewModel}"
+                            ContentTemplateSelector="{StaticResource ViewLocator}"
+                            Focusable="False" />
+        </DockPanel>
+
+        <!-- ===== 상태 표시줄 ===== -->
+        <Border Grid.Row="1" Grid.ColumnSpan="2" Background="{StaticResource SurfaceBrush}" BorderBrush="{StaticResource LineBrush}" BorderThickness="0,1,0,0" Padding="12,5">
+            <DockPanel>
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                    <TextBlock Text="{Binding DataLocationText}" Style="{StaticResource HintText}" VerticalAlignment="Center" Margin="0,0,14,0" />
+                    <Button Command="{Binding ResetCountersCommand}" Padding="8,2" Margin="0,0,6,0"
+                            ToolTip="경고/오류 카운터 초기화" Background="Transparent" BorderThickness="0">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="&#xE7BA;" FontFamily="{StaticResource IconFont}" Foreground="{StaticResource WarningBrush}" VerticalAlignment="Center" />
+                            <TextBlock Text="{Binding WarningCount}" Margin="4,0,10,0" VerticalAlignment="Center" />
+                            <TextBlock Text="&#xEA39;" FontFamily="{StaticResource IconFont}" Foreground="{StaticResource DangerBrush}" VerticalAlignment="Center" />
+                            <TextBlock Text="{Binding ErrorCount}" Margin="4,0,0,0" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Button>
+                    <Button Command="{Binding ToggleConsoleCommand}" Padding="10,2" ToolTip="디버그 터미널 열기/닫기 (F12)">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="&#xE756;" FontFamily="{StaticResource IconFont}" VerticalAlignment="Center" Margin="0,0,6,0" />
+                            <TextBlock Text="터미널" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
+                <TextBlock Text="{Binding LastLogMessage}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis">
+                    <TextBlock.Style>
+                        <Style TargetType="{x:Type TextBlock}" BasedOn="{StaticResource HintText}">
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding LastLogLevel}" Value="Warning">
+                                    <Setter Property="Foreground" Value="{StaticResource WarningBrush}" />
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding LastLogLevel}" Value="Error">
+                                    <Setter Property="Foreground" Value="{StaticResource DangerBrush}" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </TextBlock.Style>
+                </TextBlock>
+            </DockPanel>
+        </Border>
+    </Grid>
+</Window>

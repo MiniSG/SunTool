@@ -1,0 +1,6 @@
+<Project>
+  <!-- WPF SDK 는 System.IO 를 암시적 using 에서 제거하므로, SDK 이후에 다시 추가합니다. -->
+  <ItemGroup>
+    <Using Include="System.IO" />
+  </ItemGroup>
+</Project>

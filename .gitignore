@@ -1,0 +1,21 @@
+# 빌드 산출물
+bin/
+obj/
+publish/
+TestResults/
+
+# IDE
+.vs/
+.vscode/
+*.user
+*.suo
+
+# 실행 시 exe 옆에 생기는 포터블 데이터
+logs/
+cache/
+undo/
+SunTool.settings.json
+SunTool.software.json
+
+# 매뉴얼 빌드 도구
+node_modules/

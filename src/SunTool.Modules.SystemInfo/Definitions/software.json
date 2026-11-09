@@ -1,0 +1,159 @@
+{
+  // SunTool 시스템 정보 - 감지할 소프트웨어 목록 (기본값)
+  //
+  // exe 옆에 "SunTool.software.json" 을 만들고 같은 형식으로 항목을 넣으면
+  //  - 같은 name 이면 기본값을 덮어쓰고
+  //  - 새 name 이면 목록에 추가됩니다. (코드 수정 없이 새 SDK 감지 가능)
+  //
+  // category        : camera(카메라·그랩보드) | vision(이미지 라이브러리) | devtools(개발 도구)
+  // programPatterns : '프로그램 및 기능' 이름과 비교할 정규식 (대소문자 무시)
+  // excludePatterns : 이 정규식에 맞으면 제외 (예: 문서·예제 패키지)
+  // envVars         : 설치되면 생기는 환경 변수
+  // versionFiles    : 버전을 읽을 파일 (%환경변수% 사용 가능, 폴더·파일 이름에 * 가능, .. 가능)
+  // searchFolders   : 설치 프로그램 없이 압축만 푸는 라이브러리용 폴더 검색
+  //                   { roots: 시작 폴더들, folderPattern: 폴더 이름, maxDepth, files: 찾을 파일, fileDepth }
+  // pathFiles       : PATH 환경 변수 폴더에서 찾을 파일
+  // versionFromFileName : 파일에 버전 정보가 없을 때 이름에서 뽑는 정규식 (그룹을 '.' 으로 연결)
+  // registryKeys    : HKLM 아래 존재 여부를 볼 키
+  // priority        : 작을수록 위에 표시, summary=true 이면 '요약' 화면에도 표시
+  "software": [
+    // ===== 카메라 · 그랩보드 (Basler, Teledyne DALSA 우선) =====
+    {
+      "category": "camera", "name": "Basler pylon", "vendor": "Basler", "priority": 0, "summary": true,
+      // pylon 6 이후 설치 이름은 "pylon 7.x.x Camera Software Suite" 처럼 Basler 없이 시작하기도 함
+      "programPatterns": [ "^Basler pylon", "^pylon\\b", "pylon Camera Software Suite" ],
+      "excludePatterns": [ "Documentation", "Samples?\\b", "Source" ],
+      "envVars": [ "PYLON_DEV_DIR", "PYLON_ROOT" ],
+      "versionFiles": [
+        "%PYLON_DEV_DIR%\\..\\Runtime\\x64\\PylonBase_v*.dll",
+        "%PYLON_ROOT%\\Runtime\\x64\\PylonBase_v*.dll",
+        "%ProgramFiles%\\Basler\\pylon*\\Runtime\\x64\\PylonBase_v*.dll",
+        "%ProgramFiles%\\Basler\\pylon*\\Applications\\x64\\*Viewer*.exe"
+      ],
+      "versionFromFileName": "PylonBase_v(\\d+)_(\\d+)",
+      "registryKeys": [ "SOFTWARE\\Basler\\pylon" ]
+    },
+    {
+      "category": "camera", "name": "Teledyne DALSA Sapera LT", "vendor": "Teledyne DALSA", "priority": 0, "summary": true,
+      "programPatterns": [ "Sapera LT" ],
+      "envVars": [ "SAPERADIR" ],
+      "versionFiles": [ "%SAPERADIR%\\Bin\\Win64\\SapClassBasic.dll", "%SAPERADIR%\\Bin\\SapClassBasic.dll" ],
+      "registryKeys": [ "SOFTWARE\\Teledyne DALSA\\Sapera LT", "SOFTWARE\\Coreco\\Sapera LT" ]
+    },
+    {
+      "category": "camera", "name": "Teledyne DALSA 그랩보드 드라이버 (Xtium · Xcelera)", "vendor": "Teledyne DALSA", "priority": 1,
+      "programPatterns": [ "Xtium", "Xcelera", "Teledyne DALSA .*(Driver|Board)" ]
+    },
+    {
+      "category": "camera", "name": "Teledyne DALSA Sapera Network Imaging (GigE)", "vendor": "Teledyne DALSA", "priority": 1,
+      "programPatterns": [ "Network Imaging Package", "Sapera Network Imaging" ]
+    },
+    {
+      "category": "camera", "name": "Teledyne DALSA Sapera Processing", "vendor": "Teledyne DALSA", "priority": 1,
+      "programPatterns": [ "Sapera Processing" ]
+    },
+    {
+      "category": "camera", "name": "Matrox 그랩보드 드라이버 / MIL", "vendor": "Matrox", "priority": 5,
+      "programPatterns": [ "Matrox Imaging Library", "^Matrox .*Driver" ],
+      "envVars": [ "MIL_PATH" ]
+    },
+    {
+      "category": "camera", "name": "Euresys eGrabber / Coaxlink / MultiCam", "vendor": "Euresys", "priority": 5,
+      "programPatterns": [ "eGrabber", "Coaxlink", "Grablink", "MultiCam" ]
+    },
+    {
+      "category": "camera", "name": "Hikrobot MVS", "vendor": "Hikrobot", "priority": 5,
+      "programPatterns": [ "^MVS\\b", "Machine Vision Software" ],
+      "envVars": [ "MVCAM_COMMON_RUNENV" ]
+    },
+    {
+      "category": "camera", "name": "Teledyne FLIR Spinnaker", "vendor": "Teledyne FLIR", "priority": 5,
+      "programPatterns": [ "Spinnaker" ]
+    },
+    {
+      "category": "camera", "name": "Allied Vision Vimba", "vendor": "Allied Vision", "priority": 5,
+      "programPatterns": [ "^Vimba" ]
+    },
+    {
+      "category": "camera", "name": "NI Vision Acquisition (IMAQdx)", "vendor": "NI", "priority": 5,
+      "programPatterns": [ "Vision Acquisition", "NI-IMAQ" ]
+    },
+
+    // ===== 이미지 처리 라이브러리 =====
+    {
+      "category": "vision", "name": "MVTec HALCON", "vendor": "MVTec", "priority": 0, "summary": true,
+      "programPatterns": [ "HALCON" ],
+      "excludePatterns": [ "Documentation", "Example", "MERLIC" ],
+      "envVars": [ "HALCONROOT" ],
+      "versionFiles": [ "%HALCONROOT%\\bin\\%HALCONARCH%\\halcon.dll", "%HALCONROOT%\\bin\\x64-win64\\halcon.dll" ],
+      "registryKeys": [ "SOFTWARE\\MVTec\\HALCON" ]
+    },
+    {
+      "category": "vision", "name": "MVTec MERLIC", "vendor": "MVTec", "priority": 3,
+      "programPatterns": [ "MERLIC" ]
+    },
+    {
+      "category": "vision", "name": "Matrox Imaging Library (MIL)", "vendor": "Matrox", "priority": 3,
+      "programPatterns": [ "Matrox Imaging Library" ],
+      "envVars": [ "MIL_PATH" ]
+    },
+    {
+      "category": "vision", "name": "Teledyne DALSA Sapera Processing", "vendor": "Teledyne DALSA", "priority": 3,
+      "programPatterns": [ "Sapera Processing" ]
+    },
+    {
+      "category": "vision", "name": "Cognex VisionPro", "vendor": "Cognex", "priority": 3,
+      "programPatterns": [ "VisionPro" ]
+    },
+    {
+      "category": "vision", "name": "Euresys Open eVision", "vendor": "Euresys", "priority": 3,
+      "programPatterns": [ "Open eVision" ]
+    },
+    {
+      "category": "vision", "name": "OpenCV", "vendor": "OpenCV", "priority": 3,
+      // OpenCV 는 보통 설치 프로그램 없이 압축만 풀어 씀 (예: C:\opencv\build\x64\vc16\bin\opencv_world4100.dll)
+      "programPatterns": [ "OpenCV" ],
+      "envVars": [ "OPENCV_DIR" ],
+      "versionFiles": [
+        "%OPENCV_DIR%\\bin\\opencv_world*.dll",
+        "%OPENCV_DIR%\\x64\\vc*\\bin\\opencv_world*.dll",
+        "%OPENCV_DIR%\\build\\x64\\vc*\\bin\\opencv_world*.dll"
+      ],
+      "searchFolders": {
+        "roots": [ "%SystemDrive%\\", "%ProgramFiles%", "%ProgramFiles(x86)%", "%SystemDrive%\\tools", "%USERPROFILE%" ],
+        "folderPattern": "*opencv*",
+        "maxDepth": 2,
+        "files": [ "opencv_world*.dll", "opencv_core*.dll" ],
+        "fileDepth": 6
+      },
+      "pathFiles": [ "opencv_world*.dll", "opencv_core*.dll" ],
+      "versionFromFileName": "opencv_(?:world|core)(\\d)(\\d+)(\\d)d?\\.dll"
+    },
+    {
+      "category": "vision", "name": "NI Vision Development Module", "vendor": "NI", "priority": 3,
+      "programPatterns": [ "Vision Development Module" ]
+    },
+
+    // ===== 개발 도구 (Visual Studio · .NET 은 프로그램이 직접 확인) =====
+    {
+      "category": "devtools", "name": "Visual Studio Code", "vendor": "Microsoft", "priority": 1,
+      "programPatterns": [ "^Microsoft Visual Studio Code" ]
+    },
+    {
+      "category": "devtools", "name": "Windows SDK", "vendor": "Microsoft", "priority": 2,
+      "programPatterns": [ "^Windows Software Development Kit" ]
+    },
+    {
+      "category": "devtools", "name": "Git", "vendor": "Git", "priority": 2,
+      "programPatterns": [ "^Git( version|$)" ]
+    },
+    {
+      "category": "devtools", "name": "Python", "vendor": "Python", "priority": 2,
+      "programPatterns": [ "^Python \\d+\\.\\d+(\\.\\d+)? \\(64-bit\\)$", "^Python \\d+\\.\\d+(\\.\\d+)?$" ]
+    },
+    {
+      "category": "devtools", "name": "CMake", "vendor": "Kitware", "priority": 3,
+      "programPatterns": [ "^CMake" ]
+    }
+  ]
+}
