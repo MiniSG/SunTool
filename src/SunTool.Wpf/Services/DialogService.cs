@@ -1,4 +1,4 @@
-using System.Windows;
+﻿using System.Windows;
 using Microsoft.Win32;
 
 namespace SunTool.Wpf.Services;
@@ -27,16 +27,16 @@ public sealed class DialogService : IDialogService
     }
 
     public void ShowInfo(string message, string title = "SunTool") =>
-        Show(message, title, MessageBoxButton.OK, MessageBoxImage.Information);
+        Show(message, Loc.T(title), MessageBoxButton.OK, MessageBoxImage.Information);
 
     public void ShowWarning(string message, string title = "SunTool") =>
-        Show(message, title, MessageBoxButton.OK, MessageBoxImage.Warning);
+        Show(message, Loc.T(title), MessageBoxButton.OK, MessageBoxImage.Warning);
 
     public void ShowError(string message, string title = "SunTool 오류") =>
-        Show(message, title, MessageBoxButton.OK, MessageBoxImage.Error);
+        Show(message, Loc.T(title), MessageBoxButton.OK, MessageBoxImage.Error);
 
     public bool Confirm(string message, string title = "확인") =>
-        Show(message, title, MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes;
+        Show(message, Loc.T(title), MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes;
 
     public string? Prompt(string message, string title, string defaultValue = "")
     {

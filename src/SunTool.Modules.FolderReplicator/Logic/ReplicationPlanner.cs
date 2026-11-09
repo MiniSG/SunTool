@@ -1,4 +1,4 @@
-using System.Security;
+﻿using System.Security;
 using SunTool.Core.FileSystem;
 using SunTool.Core.Logging;
 
@@ -23,24 +23,24 @@ public static class ReplicationPlanner
     {
         if (string.IsNullOrWhiteSpace(sourceRoot) || !Directory.Exists(sourceRoot))
         {
-            return "원본 폴더를 먼저 지정하세요.";
+            return Loc.T("원본 폴더를 먼저 지정하세요.");
         }
 
         if (string.IsNullOrWhiteSpace(destinationRoot))
         {
-            return "목적 폴더를 지정하세요.";
+            return Loc.T("목적 폴더를 지정하세요.");
         }
 
         try
         {
             if (PathUtil.IsSameOrSubPath(destinationRoot, sourceRoot))
             {
-                return "목적 폴더가 원본 폴더와 같거나 그 안에 있습니다.\n다른 위치를 선택하세요.";
+                return Loc.T("목적 폴더가 원본 폴더와 같거나 그 안에 있습니다.\n다른 위치를 선택하세요.");
             }
         }
         catch (Exception ex) when (ex is ArgumentException or NotSupportedException or PathTooLongException)
         {
-            return $"경로가 올바르지 않습니다: {ex.Message}";
+            return Loc.F("경로가 올바르지 않습니다: {0}", ex.Message);
         }
 
         return null;
@@ -125,7 +125,7 @@ public static class ReplicationPlanner
         }
         catch (Exception ex) when (ex is UnauthorizedAccessException or IOException or SecurityException)
         {
-            var message = $"파일 목록을 읽지 못했습니다: {node.FullPath} ({ex.Message})";
+            var message = Loc.F("파일 목록을 읽지 못했습니다: {0} ({1})", node.FullPath, ex.Message);
             plan.Warnings.Add(message);
             log.Warn(message);
         }

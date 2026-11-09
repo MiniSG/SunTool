@@ -1,4 +1,4 @@
-using System.Text.RegularExpressions;
+﻿using System.Text.RegularExpressions;
 using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace SunTool.Modules.BatchRename.Logic.Rules;
@@ -41,7 +41,7 @@ public sealed partial class ReplaceRule : RenameRuleBase
             }
             catch (RegexMatchTimeoutException)
             {
-                throw new RenameRuleException("정규식 처리 시간이 너무 깁니다.");
+                throw new RenameRuleException(Loc.T("정규식 처리 시간이 너무 깁니다."));
             }
         }
 
@@ -55,13 +55,13 @@ public sealed partial class ReplaceRule : RenameRuleBase
         return at < 0 ? name : name.Remove(at, Find.Length).Insert(at, replacement);
     }
 
-    protected override string GetRuleName() => "찾아 바꾸기";
+    protected override string GetRuleName() => Loc.T("찾아 바꾸기");
 
     protected override string BuildSummary()
     {
-        var kind = UseRegex ? "정규식" : "문자열";
-        var target = string.IsNullOrEmpty(ReplaceWith) ? "(삭제)" : $"\"{ReplaceWith}\"";
-        return $"{kind} \"{Find}\" → {target}" + (FirstOnly ? " (처음 하나만)" : string.Empty);
+        var kind = UseRegex ? Loc.T("정규식") : Loc.T("문자열");
+        var target = string.IsNullOrEmpty(ReplaceWith) ? Loc.T("(삭제)") : $"\"{ReplaceWith}\"";
+        return $"{kind} \"{Find}\" → {target}" + (FirstOnly ? Loc.T(" (처음 하나만)") : string.Empty);
     }
 
     private Regex GetRegex()
@@ -81,7 +81,7 @@ public sealed partial class ReplaceRule : RenameRuleBase
         }
         catch (ArgumentException ex)
         {
-            throw new RenameRuleException($"정규식 오류: {ex.Message}");
+            throw new RenameRuleException(Loc.F("정규식 오류: {0}", ex.Message));
         }
     }
 }

@@ -1,4 +1,4 @@
-using System.Text;
+﻿using System.Text;
 
 namespace SunTool.Modules.EventLogViewer.Logic;
 
@@ -8,7 +8,7 @@ public static class EventLogCsv
     public static void Write(string path, IEnumerable<EventLogItem> items)
     {
         var builder = new StringBuilder();
-        builder.AppendLine("수준,날짜 및 시간,로그,원본,이벤트 ID,작업 범주,메시지");
+        builder.AppendLine(Loc.T("수준,날짜 및 시간,로그,원본,이벤트 ID,작업 범주,메시지"));
         foreach (var item in items)
         {
             builder.Append(Escape(item.LevelText)).Append(',')

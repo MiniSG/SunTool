@@ -1,4 +1,4 @@
-using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.DependencyInjection;
 using SunTool.Core;
 using SunTool.Core.Logging;
 using SunTool.Core.Modules;
@@ -12,9 +12,9 @@ public sealed class EventLogViewerModule : IToolModule
 {
     public string Id => "event-log-viewer";
 
-    public string DisplayName => "이벤트 로그 조회";
+    public string DisplayName => Loc.T("이벤트 로그 조회");
 
-    public string Description => "Windows 이벤트 뷰어의 위험·오류·경고 로그를 기간으로 모아 보고, 이벤트 ID의 뜻을 Windows 내부 정의에서 찾습니다.";
+    public string Description => Loc.T("Windows 이벤트 뷰어의 위험·오류·경고 로그를 기간으로 모아 보고, 이벤트 ID의 뜻을 Windows 내부 정의에서 찾습니다.");
 
     public string IconGlyph => "";
 

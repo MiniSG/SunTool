@@ -1,4 +1,5 @@
-# SunTool 릴리스: 태그(v2026.11.09 형식)를 올리거나 Actions 화면에서 직접 실행하면
+# SunTool 릴리스: 태그(v2026.11.09 / 같은 날 두 번째부터 v2026.11.09.2)를 올리거나
+# Actions 화면에서 직접 실행하면(그날 빌드 번호 자동 증가)
 # 테스트 → 단일 exe 빌드 → GitHub Releases 에 SunTool.exe 를 올립니다.
 name: Release
 
@@ -15,32 +16,41 @@ jobs:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # 같은 날짜 태그 수를 세기 위해 태그까지 받음
 
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '8.0.x'
 
-      - name: 버전(날짜) 결정
+      - name: 버전(날짜·빌드 번호) 결정
         id: ver
         shell: pwsh
         run: |
           if ($env:GITHUB_REF_TYPE -eq 'tag') {
-            $date = $env:GITHUB_REF_NAME.TrimStart('v')
+            if ($env:GITHUB_REF_NAME -notmatch '^v(\d{4}\.\d{2}\.\d{2})(?:\.(\d+))?$') { throw "태그는 v2026.11.09 또는 v2026.11.09.2 형식이어야 합니다: $env:GITHUB_REF_NAME" }
+            $date = $Matches[1]
+            $number = if ($Matches[2]) { [int]$Matches[2] } else { 1 }
+            $tag = $env:GITHUB_REF_NAME
           } else {
-            # 직접 실행: 한국 시간 기준 오늘 날짜
+            # 직접 실행: 한국 시간 기준 오늘 날짜, 그날 이미 있는 릴리스 태그 수 + 1
             $kst = [System.TimeZoneInfo]::ConvertTimeBySystemTimeZoneId([DateTime]::UtcNow, 'Korea Standard Time')
             $date = $kst.ToString('yyyy.MM.dd')
+            $existing = @(git tag -l "v$date" "v$date.*")
+            $number = $existing.Count + 1
+            $tag = if ($number -eq 1) { "v$date" } else { "v$date.$number" }
           }
-          if ($date -notmatch '^\d{4}\.\d{2}\.\d{2}$') { throw "태그는 v2026.11.09 형식이어야 합니다: $date" }
           "date=$date" >> $env:GITHUB_OUTPUT
-          "tag=v$date" >> $env:GITHUB_OUTPUT
+          "number=$number" >> $env:GITHUB_OUTPUT
+          "tag=$tag" >> $env:GITHUB_OUTPUT
+          "버전 $date, 그날 $number 번째 빌드, 태그 $tag"
 
       - name: 테스트
-        run: dotnet test tests/SunTool.Tests -c Release -p:SunToolBuildDate=${{ steps.ver.outputs.date }}
+        run: dotnet test tests/SunTool.Tests -c Release -p:SunToolBuildDate=${{ steps.ver.outputs.date }} -p:SunToolBuildNumber=${{ steps.ver.outputs.number }}
 
       - name: 단일 exe 빌드
         shell: pwsh
-        run: ./publish.ps1 -BuildDate ${{ steps.ver.outputs.date }}
+        run: ./publish.ps1 -BuildDate ${{ steps.ver.outputs.date }} -BuildNumber ${{ steps.ver.outputs.number }}
 
       - name: GitHub Release 만들기
         shell: pwsh
@@ -51,12 +61,15 @@ jobs:
           $exe = 'publish/SunTool.exe'
           $hash = (Get-FileHash $exe -Algorithm SHA256).Hash
           $size = '{0:N1}' -f ((Get-Item $exe).Length / 1MB)
+          $fileVersion = (Get-Item $exe).VersionInfo.FileVersion
           $notes = @"
           ## 다운로드
           아래 **Assets** 의 ``SunTool.exe`` ($size MB) 하나만 받으면 됩니다. 설치 없이 실행되며 .NET 도 필요 없습니다 (Windows 10/11 64비트).
 
           - 처음 실행 시 파란 경고창이 뜨면 [추가 정보] → [실행] (서명되지 않은 exe)
           - 사용법: 저장소의 ``docs/SunTool_사용매뉴얼.pptx``
+
+          파일 버전: ``$fileVersion`` (마지막 숫자 = 그날 몇 번째 빌드)
 
           SHA256: ``$hash``
           "@ -replace '(?m)^          ', ''

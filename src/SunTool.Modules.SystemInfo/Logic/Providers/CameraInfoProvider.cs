@@ -1,4 +1,4 @@
-using System.Text.RegularExpressions;
+﻿using System.Text.RegularExpressions;
 
 namespace SunTool.Modules.SystemInfo.Logic.Providers;
 
@@ -7,7 +7,7 @@ public sealed partial class CameraInfoProvider : ISystemInfoProvider
 {
     public string Id => "camera";
 
-    public string Title => "카메라 · 그랩보드";
+    public string Title => Loc.T("카메라 · 그랩보드");
 
     public string IconGlyph => "";
 
@@ -24,9 +24,9 @@ public sealed partial class CameraInfoProvider : ISystemInfoProvider
             .ThenBy(d => d.Name, StringComparer.CurrentCultureIgnoreCase)
             .ToList();
 
-        var deviceSection = new InfoSection("감지된 카메라 · 그랩보드 장치")
+        var deviceSection = new InfoSection(Loc.T("감지된 카메라 · 그랩보드 장치"))
         {
-            Note = "GigE 카메라는 네트워크로 연결되어 장치 목록에 나타나지 않습니다. pylon Viewer·CamExpert 같은 카메라 SDK 도구로 확인하세요.",
+            Note = Loc.T("GigE 카메라는 네트워크로 연결되어 장치 목록에 나타나지 않습니다. pylon Viewer·CamExpert 같은 카메라 SDK 도구로 확인하세요."),
         };
 
         foreach (var device in devices)
@@ -35,26 +35,26 @@ public sealed partial class CameraInfoProvider : ISystemInfoProvider
             var (status, stateText) = PnpDeviceReader.DescribeState(device);
             var (driverVersion, driverDate) = PnpDeviceReader.DriverOf(device.DeviceId);
             var bus = PnpDeviceReader.BusOf(device.DeviceId);
-            var kind = bus == "PCI/PCIe" ? "그랩보드(PCIe)" : bus == "USB" ? "USB 장치" : bus;
+            var kind = bus == "PCI/PCIe" ? Loc.T("그랩보드(PCIe)") : bus == "USB" ? Loc.T("USB 장치") : bus;
             deviceSection.Items.Add(new InfoItem(
                 device.Name,
-                $"{kind} · {ValueText.OrDash(device.Manufacturer)}" + (driverVersion.Length > 0 ? $" · 드라이버 {driverVersion}" : string.Empty),
+                $"{kind} · {ValueText.OrDash(device.Manufacturer)}" + (driverVersion.Length > 0 ? Loc.F(" · 드라이버 {0}", driverVersion) : string.Empty),
                 status,
-                stateText + (driverDate is { } date ? $" · 드라이버 날짜 {date:yyyy-MM-dd}" : string.Empty)));
+                stateText + (driverDate is { } date ? Loc.F(" · 드라이버 날짜 {0:yyyy-MM-dd}", date) : string.Empty)));
         }
 
         if (devices.Count == 0)
         {
-            deviceSection.Items.Add(new InfoItem("카메라·그랩보드 장치", "감지된 장치 없음", InfoStatus.NotInstalled));
+            deviceSection.Items.Add(new InfoItem(Loc.T("카메라·그랩보드 장치"), Loc.T("감지된 장치 없음"), InfoStatus.NotInstalled));
         }
 
         result.Sections.Add(deviceSection);
         result.Summary.Add(devices.Count > 0
-            ? new InfoItem("카메라·그랩보드 장치", $"{devices.Count}개", InfoStatus.Installed, string.Join(", ", devices.Select(d => d.Name).Take(4)))
-            : new InfoItem("카메라·그랩보드 장치", "감지된 장치 없음", InfoStatus.NotInstalled));
+            ? new InfoItem(Loc.T("카메라·그랩보드 장치"), Loc.F("{0}개", devices.Count), InfoStatus.Installed, string.Join(", ", devices.Select(d => d.Name).Take(4)))
+            : new InfoItem(Loc.T("카메라·그랩보드 장치"), Loc.T("감지된 장치 없음"), InfoStatus.NotInstalled));
 
         // 2) 카메라 SDK · 드라이버 (정의 파일)
-        var sdkSection = new InfoSection("카메라 SDK · 그랩보드 드라이버");
+        var sdkSection = new InfoSection(Loc.T("카메라 SDK · 그랩보드 드라이버"));
         foreach (var definition in context.Software.ForCategory("camera"))
         {
             var items = SoftwareDetector.ToItems(SoftwareDetector.Detect(definition, context.InstalledPrograms));
@@ -74,9 +74,9 @@ public sealed partial class CameraInfoProvider : ISystemInfoProvider
 
     private static InfoSection CollectGenTl()
     {
-        var section = new InfoSection("GenTL 생산자 (GenICam)")
+        var section = new InfoSection(Loc.T("GenTL 생산자 (GenICam)"))
         {
-            Note = "카메라 SDK가 GENICAM_GENTL64_PATH 환경 변수에 등록한 .cti 드라이버입니다. 여러 SDK가 같은 카메라를 잡으려 할 때 확인합니다.",
+            Note = Loc.T("카메라 SDK가 GENICAM_GENTL64_PATH 환경 변수에 등록한 .cti 드라이버입니다. 여러 SDK가 같은 카메라를 잡으려 할 때 확인합니다."),
         };
 
         foreach (var variable in new[] { "GENICAM_GENTL64_PATH", "GENICAM_GENTL32_PATH" })
@@ -104,21 +104,21 @@ public sealed partial class CameraInfoProvider : ISystemInfoProvider
                 {
                     section.Items.Add(new InfoItem(
                         Path.GetFileName(file),
-                        SoftwareDetector.ReadFileVersion(file) ?? "버전 정보 없음",
+                        SoftwareDetector.ReadFileVersion(file) ?? Loc.T("버전 정보 없음"),
                         InfoStatus.Installed,
                         $"{variable.Replace("GENICAM_", string.Empty)} · {directory}"));
                 }
 
                 if (files.Length == 0)
                 {
-                    section.Items.Add(new InfoItem("(등록된 폴더)", "폴더가 없거나 .cti 파일 없음", InfoStatus.Warning, directory));
+                    section.Items.Add(new InfoItem(Loc.T("(등록된 폴더)"), Loc.T("폴더가 없거나 .cti 파일 없음"), InfoStatus.Warning, directory));
                 }
             }
         }
 
         if (section.Items.Count == 0)
         {
-            section.Items.Add(new InfoItem("GenTL 생산자", "등록된 GenTL 없음", InfoStatus.NotInstalled));
+            section.Items.Add(new InfoItem(Loc.T("GenTL 생산자"), Loc.T("등록된 GenTL 없음"), InfoStatus.NotInstalled));
         }
 
         return section;

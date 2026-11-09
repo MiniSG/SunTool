@@ -1,4 +1,4 @@
-using System.Globalization;
+﻿using System.Globalization;
 using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace SunTool.Modules.BatchRename.Logic.Rules;
@@ -28,14 +28,14 @@ public sealed partial class CaseRule : RenameRuleBase
         _ => name,
     };
 
-    protected override string GetRuleName() => "대소문자";
+    protected override string GetRuleName() => Loc.T("대소문자");
 
     protected override string BuildSummary() => Mode switch
     {
-        CaseMode.Upper => "모두 대문자",
-        CaseMode.Lower => "모두 소문자",
-        CaseMode.TitleCase => "단어 첫 글자만 대문자",
-        CaseMode.FirstLetterUpper => "첫 글자만 대문자",
+        CaseMode.Upper => Loc.T("모두 대문자"),
+        CaseMode.Lower => Loc.T("모두 소문자"),
+        CaseMode.TitleCase => Loc.T("단어 첫 글자만 대문자"),
+        CaseMode.FirstLetterUpper => Loc.T("첫 글자만 대문자"),
         _ => Mode.ToString(),
     };
 }

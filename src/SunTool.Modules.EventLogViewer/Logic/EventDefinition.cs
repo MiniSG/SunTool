@@ -1,4 +1,4 @@
-using System.Text.Json.Serialization;
+﻿using System.Text.Json.Serialization;
 
 namespace SunTool.Modules.EventLogViewer.Logic;
 
@@ -32,10 +32,10 @@ public sealed class EventDefinition
     public EventLevelKind LevelKind => EventLevelInfo.FromLevel(Level);
 
     [JsonIgnore]
-    public string LevelText => Level == 0 ? "지정 안 됨" : EventLevelInfo.ToKorean(LevelKind);
+    public string LevelText => Level == 0 ? Loc.T("지정 안 됨") : EventLevelInfo.ToKorean(LevelKind);
 
     [JsonIgnore]
-    public string SourceText => Source == EventDefinitionSource.Manifest ? "매니페스트" : "메시지 파일";
+    public string SourceText => Source == EventDefinitionSource.Manifest ? Loc.T("매니페스트") : Loc.T("메시지 파일");
 
     [JsonIgnore]
     public string Summary
@@ -49,10 +49,10 @@ public sealed class EventDefinition
 
     [JsonIgnore]
     public string Details =>
-        $"원본: {ProviderName}    이벤트 ID: {EventId}    수준: {LevelText}    작업 범주: {(string.IsNullOrEmpty(Task) ? "없음" : Task)}    출처: {SourceText}\r\n" +
+        Loc.F("원본: {0}    이벤트 ID: {1}    수준: {2}    작업 범주: {3}    출처: {4}\r\n", ProviderName, EventId, LevelText, (string.IsNullOrEmpty(Task) ? "없음" : Task), SourceText) +
         new string('─', 60) + "\r\n" +
-        (string.IsNullOrWhiteSpace(Description) ? "(설명이 등록되어 있지 않습니다)" : Description.Replace("\n", "\r\n")) +
-        "\r\n\r\n※ %1, %2 … 는 실제 이벤트가 기록될 때 서비스 이름·오류 내용 등으로 채워지는 자리입니다.";
+        (string.IsNullOrWhiteSpace(Description) ? Loc.T("(설명이 등록되어 있지 않습니다)") : Description.Replace("\n", "\r\n")) +
+        Loc.T("\r\n\r\n※ %1, %2 … 는 실제 이벤트가 기록될 때 서비스 이름·오류 내용 등으로 채워지는 자리입니다.");
 }
 
 public readonly record struct CatalogProgress(int Done, int Total);

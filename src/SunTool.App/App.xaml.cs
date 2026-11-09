@@ -42,6 +42,12 @@ public partial class App : Application
         {
             _services = ConfigureServices(_logService);
 
+            // 화면 언어: 설정(Shell.Language) 또는 --lang=en / --lang=ko
+            var langArg = args.FirstOrDefault(a => a.StartsWith("--lang=", StringComparison.Ordinal))?["--lang=".Length..];
+            Loc.SetLanguage(langArg ?? _services.GetRequiredService<ISettingsService>().Get<string?>(MainViewModel.LanguageKey, null));
+            Loc.RegisterLoadedAssemblies();
+            _log.Info($"화면 언어: {Loc.Language} (번역 {Loc.Count}개)");
+
             var mainWindow = new MainWindow { DataContext = _services.GetRequiredService<MainViewModel>() };
             MainWindow = mainWindow;
             mainWindow.Closed += (_, _) => _services?.GetService<IConsoleWindowService>()?.CloseForShutdown();
@@ -55,7 +61,7 @@ public partial class App : Application
         catch (Exception ex)
         {
             _log.Error("시작 중 치명적 오류", ex);
-            MessageBox.Show($"프로그램을 시작하지 못했습니다.\n\n{ex.Message}\n\n로그: {_logService.LogFilePath}",
+            MessageBox.Show(Loc.F("프로그램을 시작하지 못했습니다.\n\n{0}\n\n로그: {1}", ex.Message, _logService.LogFilePath),
                 "SunTool", MessageBoxButton.OK, MessageBoxImage.Error);
             Shutdown(1);
         }
@@ -130,8 +136,8 @@ public partial class App : Application
         // 디버깅을 돕기 위해 터미널 창을 자동으로 띄웁니다.
         _services?.GetService<IConsoleWindowService>()?.Show();
         MessageBox.Show(
-            $"예기치 않은 오류가 발생했습니다.\n\n{e.Exception.Message}\n\n자세한 내용은 터미널 창(F12)을 확인하세요.",
-            "SunTool 오류", MessageBoxButton.OK, MessageBoxImage.Error);
+            Loc.F("예기치 않은 오류가 발생했습니다.\n\n{0}\n\n자세한 내용은 터미널 창(F12)을 확인하세요.", e.Exception.Message),
+            Loc.T("SunTool 오류"), MessageBoxButton.OK, MessageBoxImage.Error);
     }
 
     private static void HookWpfTrace(ILogService logService)

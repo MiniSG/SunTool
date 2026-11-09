@@ -1,4 +1,4 @@
-using System.Collections.ObjectModel;
+﻿using System.Collections.ObjectModel;
 using System.Diagnostics;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -49,10 +49,10 @@ public sealed partial class EventLogViewerViewModel : ObservableObject
 
         Channels =
         [
-            new LogChannelOption("System", "시스템") { IsSelected = true },
-            new LogChannelOption("Application", "응용 프로그램") { IsSelected = true },
-            new LogChannelOption("Security", "보안", "관리자 권한으로 실행해야 읽을 수 있습니다."),
-            new LogChannelOption("Setup", "설치"),
+            new LogChannelOption("System", Loc.T("시스템")) { IsSelected = true },
+            new LogChannelOption("Application", Loc.T("응용 프로그램")) { IsSelected = true },
+            new LogChannelOption("Security", Loc.T("보안"), Loc.T("관리자 권한으로 실행해야 읽을 수 있습니다.")),
+            new LogChannelOption("Setup", Loc.T("설치")),
         ];
 
         LoadSettings();
@@ -130,11 +130,11 @@ public sealed partial class EventLogViewerViewModel : ObservableObject
     private bool _hasResult;
 
     [ObservableProperty]
-    private string _statusText = "조건을 고른 뒤 [조회]를 누르세요.";
+    private string _statusText = Loc.T("조건을 고른 뒤 [조회]를 누르세요.");
 
     public string RangeText => FromDate is { } f && ToDate is { } t
-        ? $"{f:yyyy-MM-dd} ~ {t:yyyy-MM-dd} ({(t.Date - f.Date).Days + 1}일)"
-        : "기간을 지정하세요";
+        ? Loc.F("{0:yyyy-MM-dd} ~ {1:yyyy-MM-dd} ({2}일)", f, t, (t.Date - f.Date).Days + 1)
+        : Loc.T("기간을 지정하세요");
 
     partial void OnIsBusyChanged(bool value)
     {
@@ -185,12 +185,12 @@ public sealed partial class EventLogViewerViewModel : ObservableObject
         SaveSettings();
         IsBusy = true;
         _cts = new CancellationTokenSource();
-        StatusText = "이벤트 로그를 읽는 중...";
+        StatusText = Loc.T("이벤트 로그를 읽는 중...");
         _log.Info($"이벤트 로그 조회: {string.Join(", ", request.LogNames)} / {request.Levels} / {RangeText}");
 
         try
         {
-            var progress = new Progress<int>(n => StatusText = $"이벤트 로그를 읽는 중... {n:N0}건");
+            var progress = new Progress<int>(n => StatusText = Loc.F("이벤트 로그를 읽는 중... {0:N0}건", n));
             var result = await EventLogSearcher.SearchAsync(request, progress, _log, _cts.Token);
 
             _all = result.Items;
@@ -199,15 +199,15 @@ public sealed partial class EventLogViewerViewModel : ObservableObject
             DisplayLevel = null;
             ApplyFilter();
 
-            var status = $"{result.Items.Count:N0}건을 찾았습니다 ({result.Elapsed.TotalSeconds:0.0}초).";
+            var status = Loc.F("{0:N0}건을 찾았습니다 ({1:0.0}초).", result.Items.Count, result.Elapsed.TotalSeconds);
             if (result.Truncated)
             {
-                status += $" 최대 {request.MaxResults:N0}건까지만 표시합니다 — 기간을 줄이거나 최대 개수를 늘리세요.";
+                status += Loc.F(" 최대 {0:N0}건까지만 표시합니다 — 기간을 줄이거나 최대 개수를 늘리세요.", request.MaxResults);
             }
 
             if (result.Cancelled)
             {
-                status = "취소됨 — 그때까지 읽은 " + status;
+                status = Loc.T("취소됨 — 그때까지 읽은 ") + status;
             }
 
             StatusText = status;
@@ -224,9 +224,9 @@ public sealed partial class EventLogViewerViewModel : ObservableObject
         }
         catch (Exception ex)
         {
-            StatusText = "조회 실패: " + ex.Message;
+            StatusText = Loc.T("조회 실패: ") + ex.Message;
             _log.Error("이벤트 로그 조회 실패", ex);
-            _dialogs.ShowError($"이벤트 로그를 읽지 못했습니다.\n\n{ex.Message}");
+            _dialogs.ShowError(Loc.F("이벤트 로그를 읽지 못했습니다.\n\n{0}", ex.Message));
         }
         finally
         {
@@ -240,7 +240,7 @@ public sealed partial class EventLogViewerViewModel : ObservableObject
     private void Cancel()
     {
         _cts?.Cancel();
-        StatusText = "취소하는 중...";
+        StatusText = Loc.T("취소하는 중...");
     }
 
     /// <summary>수준 칩 클릭: all / critical / error / warning / information</summary>
@@ -262,7 +262,7 @@ public sealed partial class EventLogViewerViewModel : ObservableObject
     [RelayCommand(CanExecute = nameof(CanExport))]
     private void ExportCsv()
     {
-        var path = _dialogs.SaveFile("CSV로 저장", "CSV 파일 (*.csv)|*.csv", $"이벤트로그_{DateTime.Now:yyyyMMdd_HHmm}.csv");
+        var path = _dialogs.SaveFile(Loc.T("CSV로 저장"), Loc.T("CSV 파일 (*.csv)|*.csv"), Loc.F("이벤트로그_{0:yyyyMMdd_HHmm}.csv", DateTime.Now));
         if (path is null)
         {
             return;
@@ -271,13 +271,13 @@ public sealed partial class EventLogViewerViewModel : ObservableObject
         try
         {
             EventLogCsv.Write(path, Entries);
-            StatusText = $"{Entries.Count:N0}건을 저장했습니다: {path}";
+            StatusText = Loc.F("{0:N0}건을 저장했습니다: {1}", Entries.Count, path);
             _log.Info(StatusText);
         }
         catch (Exception ex)
         {
             _log.Error("CSV 저장 실패", ex);
-            _dialogs.ShowError($"저장하지 못했습니다.\n\n{ex.Message}");
+            _dialogs.ShowError(Loc.F("저장하지 못했습니다.\n\n{0}", ex.Message));
         }
     }
 
@@ -286,7 +286,7 @@ public sealed partial class EventLogViewerViewModel : ObservableObject
     {
         if (SelectedEntry is not null && _clipboard.SetText(SelectedEntry.Details))
         {
-            StatusText = "선택한 이벤트 내용을 클립보드에 복사했습니다.";
+            StatusText = Loc.T("선택한 이벤트 내용을 클립보드에 복사했습니다.");
         }
     }
 
@@ -324,7 +324,7 @@ public sealed partial class EventLogViewerViewModel : ObservableObject
         var logs = Channels.Where(c => c.IsSelected).Select(c => c.Name).ToList();
         if (logs.Count == 0)
         {
-            error = "조회할 로그를 하나 이상 고르세요.";
+            error = Loc.T("조회할 로그를 하나 이상 고르세요.");
             return null;
         }
 
@@ -351,19 +351,19 @@ public sealed partial class EventLogViewerViewModel : ObservableObject
 
         if (levels == EventLevels.None)
         {
-            error = "이벤트 수준(위험·오류·경고·정보)을 하나 이상 고르세요.";
+            error = Loc.T("이벤트 수준(위험·오류·경고·정보)을 하나 이상 고르세요.");
             return null;
         }
 
         if (FromDate is not { } from || ToDate is not { } to)
         {
-            error = "시작일과 종료일을 지정하세요.";
+            error = Loc.T("시작일과 종료일을 지정하세요.");
             return null;
         }
 
         if (from.Date > to.Date)
         {
-            error = "시작일이 종료일보다 늦습니다.";
+            error = Loc.T("시작일이 종료일보다 늦습니다.");
             return null;
         }
 

@@ -1,4 +1,4 @@
-using System.Collections.ObjectModel;
+﻿using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using SunTool.Core.Text;
@@ -40,8 +40,8 @@ public sealed partial class FolderNodeViewModel : ObservableObject
     public bool HasError => Model.Error is not null;
 
     public string Detail => Model.FileCount == 0
-        ? "파일 없음"
-        : $"파일 {Model.FileCount:N0}개 · {SizeFormatter.Format(Model.FileBytes)}";
+        ? Loc.T("파일 없음")
+        : Loc.F("파일 {0:N0}개 · {1}", Model.FileCount, SizeFormatter.Format(Model.FileBytes));
 
     [ObservableProperty]
     private bool _isChecked;

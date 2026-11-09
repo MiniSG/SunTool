@@ -1,4 +1,4 @@
-using System.Security;
+﻿using System.Security;
 using SunTool.Core.FileSystem;
 using SunTool.Core.Logging;
 using SunTool.Core.Text;
@@ -33,7 +33,7 @@ public static class FolderScanner
         var fullRoot = PathUtil.Normalize(rootPath);
         if (!Directory.Exists(fullRoot))
         {
-            throw new DirectoryNotFoundException($"폴더를 찾을 수 없습니다: {fullRoot}");
+            throw new DirectoryNotFoundException(Loc.F("폴더를 찾을 수 없습니다: {0}", fullRoot));
         }
 
         var root = new FolderNode(fullRoot, string.Empty, PathUtil.GetFolderName(fullRoot), null);

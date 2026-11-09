@@ -1,4 +1,4 @@
-using System.Globalization;
+﻿using System.Globalization;
 using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace SunTool.Modules.BatchRename.Logic.Rules;
@@ -72,12 +72,12 @@ public sealed partial class NumberingRule : RenameRuleBase
         return number < 0 ? "-" + digits : digits;
     }
 
-    protected override string GetRuleName() => "번호 매기기";
+    protected override string GetRuleName() => Loc.T("번호 매기기");
 
     protected override string BuildSummary()
     {
         var example = $"{BuildText(Start)}, {BuildText((long)Start + Step)}…";
-        var where = ReplaceName ? "이름을 번호로 바꾸기" : $"{TextPlacement.Describe(Position, Index, FromEnd, AnchorText)}에 번호";
-        return $"{where}: {example}" + (PerFolder ? " (폴더별)" : string.Empty);
+        var where = ReplaceName ? Loc.T("이름을 번호로 바꾸기") : Loc.F("{0}에 번호", TextPlacement.Describe(Position, Index, FromEnd, AnchorText));
+        return $"{where}: {example}" + (PerFolder ? Loc.T(" (폴더별)") : string.Empty);
     }
 }

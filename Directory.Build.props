@@ -9,15 +9,20 @@
   </PropertyGroup>
 
   <!--
-    버전 = 빌드한 날짜.
-    표시용(InformationalVersion): 2026.11.09 / 어셈블리·파일 버전: 2026.11.9
-    같은 날 다시 빌드하면 같은 버전이 됩니다.
+    버전 = 빌드한 날짜 + 그날의 빌드 번호.
+    파일 버전(Version)        : 2026.11.9.N   (N = 같은 날 몇 번째 배포인지, 1부터)
+    표시 버전(Informational)  : 2026.11.09    (N 이 2 이상이면 2026.11.09.2)
+    - dotnet build            : N = 0 (개발용)
+    - publish.ps1             : 같은 날 다시 실행하면 N 이 1씩 증가 (.build-number 파일에 기록)
+    - GitHub Actions 릴리스   : 같은 날짜 태그 수로 N 결정 (v2026.11.09, v2026.11.09.2, ...)
+    바깥에서 지정: -p:SunToolBuildDate=yyyy.MM.dd -p:SunToolBuildNumber=N
   -->
   <PropertyGroup>
-    <!-- 릴리스 빌드(GitHub Actions)는 -p:SunToolBuildDate=yyyy.MM.dd 로 태그 날짜를 넘깁니다. -->
     <SunToolBuildDate Condition="'$(SunToolBuildDate)' == ''">$([System.DateTime]::Now.ToString('yyyy.MM.dd'))</SunToolBuildDate>
-    <Version>$(SunToolBuildDate.Substring(0,4)).$([MSBuild]::Add($(SunToolBuildDate.Substring(5,2)), 0)).$([MSBuild]::Add($(SunToolBuildDate.Substring(8,2)), 0))</Version>
+    <SunToolBuildNumber Condition="'$(SunToolBuildNumber)' == ''">0</SunToolBuildNumber>
+    <Version>$(SunToolBuildDate.Substring(0,4)).$([MSBuild]::Add($(SunToolBuildDate.Substring(5,2)), 0)).$([MSBuild]::Add($(SunToolBuildDate.Substring(8,2)), 0)).$(SunToolBuildNumber)</Version>
     <InformationalVersion>$(SunToolBuildDate)</InformationalVersion>
+    <InformationalVersion Condition="$(SunToolBuildNumber) &gt; 1">$(SunToolBuildDate).$(SunToolBuildNumber)</InformationalVersion>
     <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
   </PropertyGroup>
 </Project>

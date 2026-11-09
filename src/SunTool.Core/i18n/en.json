@@ -1,0 +1,9 @@
+{
+  "'{0}'은(는) Windows 예약어라 쓸 수 없습니다.": "'{0}' is a reserved name in Windows and cannot be used.",
+  "{0}개 파일": "{0} files",
+  "사용할 수 없는 문자가 있습니다 ( \\ / : * ? \" < > | ).": "Contains invalid characters ( \\ / : * ? \" < > | ).",
+  "원본 폴더": "Source folder",
+  "이름은 공백이나 마침표로 끝날 수 없습니다.": "Names cannot end with a space or period.",
+  "이름이 너무 깁니다 ({0}자, 최대 {1}자).": "The name is too long ({0} chars, max {1}).",
+  "이름이 비어 있습니다.": "The name is empty."
+}

@@ -1,4 +1,4 @@
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using Microsoft.Win32;
@@ -10,7 +10,7 @@ public sealed partial class DevToolsInfoProvider : ISystemInfoProvider
 {
     public string Id => "devtools";
 
-    public string Title => "개발 도구";
+    public string Title => Loc.T("개발 도구");
 
     public string IconGlyph => "";
 
@@ -28,17 +28,17 @@ public sealed partial class DevToolsInfoProvider : ISystemInfoProvider
             foreach (var instance in instances)
             {
                 section.Items.Add(new InfoItem(instance.Name, instance.Version, instance.Complete ? InfoStatus.Installed : InfoStatus.Warning,
-                    $"경로: {instance.Path}" + (instance.Complete ? string.Empty : " · 설치가 완료되지 않았습니다")));
+                    Loc.F("경로: {0}", instance.Path) + (instance.Complete ? string.Empty : Loc.T(" · 설치가 완료되지 않았습니다"))));
             }
 
             foreach (var legacy in context.InstalledPrograms.Where(p => !p.Hidden && LegacyVsRegex().IsMatch(p.DisplayName)))
             {
-                section.Items.Add(new InfoItem(legacy.DisplayName, ValueText.OrDash(legacy.DisplayVersion), InfoStatus.Installed, "이전 버전 (2015 이하)"));
+                section.Items.Add(new InfoItem(legacy.DisplayName, ValueText.OrDash(legacy.DisplayVersion), InfoStatus.Installed, Loc.T("이전 버전 (2015 이하)")));
             }
 
             if (section.Items.Count == 0)
             {
-                section.Items.Add(new InfoItem("Visual Studio", "설치되지 않음", InfoStatus.NotInstalled));
+                section.Items.Add(new InfoItem("Visual Studio", Loc.T("설치되지 않음"), InfoStatus.NotInstalled));
             }
 
             section.Note = source;
@@ -54,13 +54,13 @@ public sealed partial class DevToolsInfoProvider : ISystemInfoProvider
             var sdks = ListVersionFolders(Path.Combine(dotnetRoot, "sdk"));
             section.Items.Add(sdks.Count > 0
                 ? new InfoItem(".NET SDK", string.Join(", ", sdks), InfoStatus.Installed)
-                : new InfoItem(".NET SDK", "설치되지 않음", InfoStatus.NotInstalled));
+                : new InfoItem(".NET SDK", Loc.T("설치되지 않음"), InfoStatus.NotInstalled));
 
             foreach (var (runtime, label) in new[]
                      {
-                         ("Microsoft.NETCore.App", ".NET 런타임"),
-                         ("Microsoft.WindowsDesktop.App", "데스크톱 런타임 (WPF/WinForms)"),
-                         ("Microsoft.AspNetCore.App", "ASP.NET Core 런타임"),
+                         ("Microsoft.NETCore.App", Loc.T(".NET 런타임")),
+                         ("Microsoft.WindowsDesktop.App", Loc.T("데스크톱 런타임 (WPF/WinForms)")),
+                         ("Microsoft.AspNetCore.App", Loc.T("ASP.NET Core 런타임")),
                      })
             {
                 var versions = ListVersionFolders(Path.Combine(dotnetRoot, "shared", runtime));
@@ -70,11 +70,11 @@ public sealed partial class DevToolsInfoProvider : ISystemInfoProvider
                 }
             }
 
-            section.Items.Add(new InfoItem(".NET Framework", ReadNetFramework() ?? "4.5 미만 또는 확인 불가"));
+            section.Items.Add(new InfoItem(".NET Framework", ReadNetFramework() ?? Loc.T("4.5 미만 또는 확인 불가")));
         }));
 
         // VC++ 재배포 패키지 (비전 라이브러리 실행에 필요)
-        result.Sections.Add(ComputerInfoProvider.Section("Visual C++ 재배포 패키지", log, section =>
+        result.Sections.Add(ComputerInfoProvider.Section(Loc.T("Visual C++ 재배포 패키지"), log, section =>
         {
             foreach (var program in context.InstalledPrograms
                          .Where(p => !p.Hidden && VcRedistRegex().IsMatch(p.DisplayName))
@@ -85,12 +85,12 @@ public sealed partial class DevToolsInfoProvider : ISystemInfoProvider
 
             if (section.Items.Count == 0)
             {
-                section.Items.Add(new InfoItem("VC++ 재배포 패키지", "설치되지 않음", InfoStatus.NotInstalled));
+                section.Items.Add(new InfoItem(Loc.T("VC++ 재배포 패키지"), Loc.T("설치되지 않음"), InfoStatus.NotInstalled));
             }
         }));
 
         // 정의 파일의 기타 개발 도구
-        var others = new InfoSection("기타 개발 도구");
+        var others = new InfoSection(Loc.T("기타 개발 도구"));
         foreach (var definition in context.Software.ForCategory("devtools"))
         {
             var detection = SoftwareDetector.Detect(definition, context.InstalledPrograms);
@@ -116,11 +116,11 @@ public sealed partial class DevToolsInfoProvider : ISystemInfoProvider
         var vswhere = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86), "Microsoft Visual Studio", "Installer", "vswhere.exe");
         if (!File.Exists(vswhere))
         {
-            source = "vswhere.exe 가 없어 Visual Studio 2017 이상은 확인하지 못했습니다 (설치되지 않았을 가능성이 큽니다).";
+            source = Loc.T("vswhere.exe 가 없어 Visual Studio 2017 이상은 확인하지 못했습니다 (설치되지 않았을 가능성이 큽니다).");
             return new List<VisualStudioInstance>();
         }
 
-        source = "Visual Studio 설치 관리자(vswhere)로 확인";
+        source = Loc.T("Visual Studio 설치 관리자(vswhere)로 확인");
         var start = new ProcessStartInfo(vswhere, "-all -prerelease -products * -format json -utf8")
         {
             RedirectStandardOutput = true,
@@ -129,12 +129,12 @@ public sealed partial class DevToolsInfoProvider : ISystemInfoProvider
             StandardOutputEncoding = System.Text.Encoding.UTF8,
         };
 
-        using var process = Process.Start(start) ?? throw new InvalidOperationException("vswhere 실행 실패");
+        using var process = Process.Start(start) ?? throw new InvalidOperationException(Loc.T("vswhere 실행 실패"));
         var output = process.StandardOutput.ReadToEnd();
         if (!process.WaitForExit(15000))
         {
             process.Kill();
-            throw new TimeoutException("vswhere 응답 시간 초과");
+            throw new TimeoutException(Loc.T("vswhere 응답 시간 초과"));
         }
 
         return ParseVsWhere(output);

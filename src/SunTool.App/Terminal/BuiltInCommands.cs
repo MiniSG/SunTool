@@ -20,6 +20,7 @@ internal static class BuiltInCommands
         services.AddSingleton<IConsoleCommand, PathsCommand>();
         services.AddSingleton<IConsoleCommand, EnvCommand>();
         services.AddSingleton<IConsoleCommand, GcCommand>();
+        services.AddSingleton<IConsoleCommand, LangCommand>();
         services.AddSingleton<IConsoleCommand, SettingsCommand>();
         services.AddSingleton<IConsoleCommand, TestLogCommand>();
     }
@@ -136,6 +137,33 @@ internal static class BuiltInCommands
             context.Write($"  작업 메모리 : {process.WorkingSet64 / 1024 / 1024:N0} MB");
             context.Write($"  관리 힙     : {GC.GetTotalMemory(false) / 1024 / 1024:N0} MB");
             context.Write($"  가동 시간   : {DateTime.Now - process.StartTime:hh\\:mm\\:ss}");
+        }
+    }
+
+    private sealed class LangCommand : IConsoleCommand
+    {
+        public string Name => "lang";
+
+        public string Usage => "lang [missing]";
+
+        public string Description => "화면 언어와 번역 사전 상태를 보여줍니다. missing: 영어 모드에서 번역이 없어 한국어로 나온 문구.";
+
+        public void Execute(IReadOnlyList<string> args, IConsoleContext context)
+        {
+            context.Write($"화면 언어: {Loc.Language}  (번역 {Loc.Count}개, 설정 키 Shell.Language, 실행 옵션 --lang=en|ko)");
+            var missing = Loc.MissingKeys;
+            if (args.Count > 0 && args[0] == "missing")
+            {
+                context.Write($"번역 없음 {missing.Count}개" + (Loc.IsEnglish ? string.Empty : " (영어 모드에서만 기록)"));
+                foreach (var key in missing)
+                {
+                    context.Write("  " + key.Replace("\r", "\\r").Replace("\n", "\\n"), LogLevel.Warning);
+                }
+            }
+            else if (missing.Count > 0)
+            {
+                context.Write($"번역 없음 {missing.Count}개 — 'lang missing' 으로 확인", LogLevel.Warning);
+            }
         }
     }
 

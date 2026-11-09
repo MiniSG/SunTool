@@ -1,4 +1,4 @@
-using CommunityToolkit.Mvvm.ComponentModel;
+﻿using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace SunTool.Modules.BatchRename.Logic.Rules;
 
@@ -28,8 +28,8 @@ public sealed partial class InsertTextRule : RenameRuleBase
             ? name
             : TextPlacement.Insert(name, Text, Position, Index, FromEnd, AnchorText, IgnoreCase);
 
-    protected override string GetRuleName() => "텍스트 삽입";
+    protected override string GetRuleName() => Loc.T("텍스트 삽입");
 
     protected override string BuildSummary() =>
-        $"{TextPlacement.Describe(Position, Index, FromEnd, AnchorText)}에 \"{Text}\" 넣기";
+        Loc.F("{0}에 \"{1}\" 넣기", TextPlacement.Describe(Position, Index, FromEnd, AnchorText), Text);
 }

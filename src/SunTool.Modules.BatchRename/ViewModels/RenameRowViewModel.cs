@@ -1,4 +1,4 @@
-using CommunityToolkit.Mvvm.ComponentModel;
+﻿using CommunityToolkit.Mvvm.ComponentModel;
 using SunTool.Modules.BatchRename.Logic;
 
 namespace SunTool.Modules.BatchRename.ViewModels;
@@ -37,11 +37,11 @@ public sealed partial class RenameRowViewModel : ObservableObject
         Message = preview.Message;
         StatusText = preview.Status switch
         {
-            RenameStatus.Unchanged => "변경 없음",
-            RenameStatus.Ok => "변경",
-            RenameStatus.Conflict => "충돌",
-            RenameStatus.Invalid => "이름 오류",
-            RenameStatus.Error => "규칙 오류",
+            RenameStatus.Unchanged => Loc.T("변경 없음"),
+            RenameStatus.Ok => Loc.T("변경"),
+            RenameStatus.Conflict => Loc.T("충돌"),
+            RenameStatus.Invalid => Loc.T("이름 오류"),
+            RenameStatus.Error => Loc.T("규칙 오류"),
             _ => preview.Status.ToString(),
         };
     }

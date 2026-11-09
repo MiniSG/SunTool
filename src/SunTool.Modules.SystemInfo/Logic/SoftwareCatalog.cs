@@ -1,4 +1,4 @@
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.IO.Enumeration;
 using System.Text.Json;
 using System.Text.RegularExpressions;
@@ -90,7 +90,7 @@ public sealed class SoftwareCatalog
     public static string ReadDefaultJson()
     {
         using var stream = typeof(SoftwareCatalog).Assembly.GetManifestResourceStream(ResourceName)
-                           ?? throw new InvalidOperationException("기본 소프트웨어 정의를 찾을 수 없습니다.");
+                           ?? throw new InvalidOperationException(Loc.T("기본 소프트웨어 정의를 찾을 수 없습니다."));
         using var reader = new StreamReader(stream);
         return reader.ReadToEnd();
     }
@@ -116,12 +116,12 @@ public sealed class SoftwareCatalog
                 }
 
                 loadedUserFile = userFilePath;
-                log?.Debug($"사용자 소프트웨어 정의 적용: {userFilePath}");
+                log?.Debug(Loc.F("사용자 소프트웨어 정의 적용: {0}", userFilePath));
             }
             catch (Exception ex) when (ex is JsonException or IOException or UnauthorizedAccessException)
             {
                 error = ex.Message;
-                log?.Warn($"사용자 소프트웨어 정의 파일을 읽지 못해 기본값만 사용합니다: {userFilePath}", ex);
+                log?.Warn(Loc.F("사용자 소프트웨어 정의 파일을 읽지 못해 기본값만 사용합니다: {0}", userFilePath), ex);
             }
         }
 
@@ -240,15 +240,15 @@ public static partial class SoftwareDetector
             var multiple = detection.Programs.Count > 1;
             return detection.Programs.Select((program, index) =>
             {
-                var details = new List<string> { $"설치 이름: {program.DisplayName}" };
+                var details = new List<string> { Loc.F("설치 이름: {0}", program.DisplayName) };
                 if (program.Publisher.Length > 0)
                 {
-                    details.Add($"제조사: {program.Publisher}");
+                    details.Add(Loc.F("제조사: {0}", program.Publisher));
                 }
 
                 if (program.InstallLocation.Length > 0)
                 {
-                    details.Add($"경로: {program.InstallLocation}");
+                    details.Add(Loc.F("경로: {0}", program.InstallLocation));
                 }
 
                 if (index == 0)
@@ -258,7 +258,7 @@ public static partial class SoftwareDetector
 
                 var version = !string.IsNullOrWhiteSpace(program.DisplayVersion)
                     ? program.DisplayVersion
-                    : detection.FileVersions.FirstOrDefault() ?? "설치됨 (버전 정보 없음)";
+                    : detection.FileVersions.FirstOrDefault() ?? Loc.T("설치됨 (버전 정보 없음)");
 
                 return new InfoItem(multiple ? $"{definition.Name} #{index + 1}" : definition.Name, version, InfoStatus.Installed, string.Join("  ·  ", details));
             }).ToList();
@@ -271,13 +271,13 @@ public static partial class SoftwareDetector
             [
                 new InfoItem(
                     definition.Name,
-                    versions.Count > 0 ? string.Join(", ", versions) : "설치 흔적 있음 (버전 확인 불가)",
+                    versions.Count > 0 ? string.Join(", ", versions) : Loc.T("설치 흔적 있음 (버전 확인 불가)"),
                     versions.Count > 0 ? InfoStatus.Installed : InfoStatus.Warning,
                     string.Join("  ·  ", evidence)),
             ];
         }
 
-        return [new InfoItem(definition.Name, "설치되지 않음", InfoStatus.NotInstalled)];
+        return [new InfoItem(definition.Name, Loc.T("설치되지 않음"), InfoStatus.NotInstalled)];
     }
 
     /// <summary>

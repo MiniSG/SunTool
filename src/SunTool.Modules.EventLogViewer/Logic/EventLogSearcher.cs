@@ -1,4 +1,4 @@
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.Diagnostics.Eventing.Reader;
 using System.Text;
 using SunTool.Core.Logging;
@@ -18,7 +18,7 @@ public static class EventLogSearcher
     };
 
     public static string DisplayName(string logName) =>
-        KnownLogs.TryGetValue(logName, out var name) ? name : logName;
+        KnownLogs.TryGetValue(logName, out var name) ? Loc.T(name) : logName;
 
     public static Task<EventLogSearchResult> SearchAsync(
         EventLogSearchRequest request,
@@ -90,15 +90,15 @@ public static class EventLogSearcher
             }
             catch (UnauthorizedAccessException)
             {
-                warnings.Add($"'{display}' 로그는 관리자 권한이 있어야 읽을 수 있어 건너뛰었습니다.");
+                warnings.Add(Loc.F("'{0}' 로그는 관리자 권한이 있어야 읽을 수 있어 건너뛰었습니다.", display));
             }
             catch (EventLogNotFoundException)
             {
-                warnings.Add($"'{display}' 로그를 찾을 수 없습니다.");
+                warnings.Add(Loc.F("'{0}' 로그를 찾을 수 없습니다.", display));
             }
             catch (EventLogException ex)
             {
-                warnings.Add($"'{display}' 로그를 읽지 못했습니다: {ex.Message}");
+                warnings.Add(Loc.F("'{0}' 로그를 읽지 못했습니다: {1}", display, ex.Message));
                 log.Warn($"이벤트 로그 읽기 실패: {logName}", ex);
             }
 
@@ -165,13 +165,13 @@ public static class EventLogSearcher
 
     private static string FallbackMessage(EventRecord record)
     {
-        var builder = new StringBuilder("이 이벤트의 설명을 찾을 수 없습니다 (원본 메시지 파일 없음).");
+        var builder = new StringBuilder(Loc.T("이 이벤트의 설명을 찾을 수 없습니다 (원본 메시지 파일 없음)."));
         try
         {
             var values = record.Properties.Select(p => p.Value?.ToString()).Where(v => !string.IsNullOrWhiteSpace(v)).ToList();
             if (values.Count > 0)
             {
-                builder.AppendLine().Append("이벤트 데이터: ").Append(string.Join(", ", values));
+                builder.AppendLine().Append(Loc.T("이벤트 데이터: ")).Append(string.Join(", ", values));
             }
         }
         catch (EventLogException)

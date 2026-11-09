@@ -2,5 +2,12 @@
   <!-- WPF SDK 는 System.IO 를 암시적 using 에서 제거하므로, SDK 이후에 다시 추가합니다. -->
   <ItemGroup>
     <Using Include="System.IO" />
+    <!-- 화면 문구 번역: Loc.T("한국어") -->
+    <Using Include="SunTool.Core.Localization" />
+  </ItemGroup>
+
+  <!-- 각 프로젝트의 i18n\en.json 을 "<어셈블리>.i18n.en.json" 리소스로 포함 (Loc.Register 가 읽음) -->
+  <ItemGroup>
+    <EmbeddedResource Include="i18n\*.json" LogicalName="$(AssemblyName).i18n.%(Filename).json" />
   </ItemGroup>
 </Project>

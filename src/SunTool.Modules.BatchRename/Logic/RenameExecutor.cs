@@ -1,4 +1,4 @@
-using System.Text.Json;
+﻿using System.Text.Json;
 using SunTool.Core.Logging;
 using SunTool.Core.Settings;
 
@@ -52,7 +52,7 @@ public static class RenameExecutor
             {
                 if (File.Exists(operation.TargetPath) || Directory.Exists(operation.TargetPath))
                 {
-                    throw new IOException("같은 이름의 파일이 이미 있습니다.");
+                    throw new IOException(Loc.T("같은 이름의 파일이 이미 있습니다."));
                 }
 
                 File.Move(temp, operation.TargetPath);

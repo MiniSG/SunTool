@@ -1,4 +1,4 @@
-namespace SunTool.Modules.BatchRename.Logic;
+﻿namespace SunTool.Modules.BatchRename.Logic;
 
 /// <summary>텍스트를 넣을 위치.</summary>
 public enum TextPosition
@@ -70,11 +70,11 @@ public static class TextPlacement
 
     public static string Describe(TextPosition position, int index, bool fromEnd, string? anchor) => position switch
     {
-        TextPosition.Prefix => "앞",
-        TextPosition.Suffix => "끝",
-        TextPosition.AtIndex => fromEnd ? $"끝에서 {index}번째" : $"{index}번째 글자 위치",
-        TextPosition.BeforeText => $"\"{anchor}\" 앞",
-        TextPosition.AfterText => $"\"{anchor}\" 뒤",
+        TextPosition.Prefix => Loc.T("앞"),
+        TextPosition.Suffix => Loc.T("끝"),
+        TextPosition.AtIndex => fromEnd ? Loc.F("끝에서 {0}번째", index) : Loc.F("{0}번째 글자 위치", index),
+        TextPosition.BeforeText => Loc.F("\"{0}\" 앞", anchor),
+        TextPosition.AfterText => Loc.F("\"{0}\" 뒤", anchor),
         _ => position.ToString(),
     };
 }

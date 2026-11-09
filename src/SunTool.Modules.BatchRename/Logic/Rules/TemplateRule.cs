@@ -1,4 +1,4 @@
-using System.Globalization;
+﻿using System.Globalization;
 using System.Text.RegularExpressions;
 using CommunityToolkit.Mvvm.ComponentModel;
 
@@ -26,8 +26,8 @@ public sealed partial class TemplateRule : RenameRuleBase
     private bool _perFolder;
 
     public static string TokenHelp =>
-        "{name} 현재 이름 · {orig} 원래 이름 · {n} 또는 {n:000} 번호 · {ext} 확장자 · {parent} 상위 폴더\n" +
-        "{date:yyyyMMdd} 수정일 · {created:yyyyMMdd} 생성일 · {today:yyyy-MM-dd} 오늘 · {count} 전체 개수";
+        Loc.T("{name} 현재 이름 · {orig} 원래 이름 · {n} 또는 {n:000} 번호 · {ext} 확장자 · {parent} 상위 폴더\n") +
+        Loc.T("{date:yyyyMMdd} 수정일 · {created:yyyyMMdd} 생성일 · {today:yyyy-MM-dd} 오늘 · {count} 전체 개수");
 
     public override string Apply(string name, RenameContext context)
     {
@@ -39,7 +39,7 @@ public sealed partial class TemplateRule : RenameRuleBase
         return TokenRegex.Replace(Template, match => Resolve(match, name, context));
     }
 
-    protected override string GetRuleName() => "서식 템플릿";
+    protected override string GetRuleName() => Loc.T("서식 템플릿");
 
     protected override string BuildSummary() => $"\"{Template}\"";
 
@@ -67,7 +67,7 @@ public sealed partial class TemplateRule : RenameRuleBase
         }
         catch (FormatException)
         {
-            throw new RenameRuleException($"서식이 올바르지 않습니다: {match.Value}");
+            throw new RenameRuleException(Loc.F("서식이 올바르지 않습니다: {0}", match.Value));
         }
     }
 

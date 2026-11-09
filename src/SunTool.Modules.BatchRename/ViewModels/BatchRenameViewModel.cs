@@ -1,4 +1,4 @@
-using System.Collections.ObjectModel;
+﻿using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.ComponentModel;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -61,7 +61,7 @@ public sealed partial class BatchRenameViewModel : ObservableObject
     private RenameRowViewModel? _selectedRow;
 
     [ObservableProperty]
-    private string _sourceDisplay = "(지정 안 됨)";
+    private string _sourceDisplay = Loc.T("(지정 안 됨)");
 
     [ObservableProperty]
     private bool _includeSubfolders;
@@ -176,7 +176,7 @@ public sealed partial class BatchRenameViewModel : ObservableObject
     [RelayCommand]
     private void BrowseFolder()
     {
-        var folder = _dialogs.PickFolder("이름을 바꿀 파일이 있는 폴더 선택", _sources.FirstOrDefault(Directory.Exists));
+        var folder = _dialogs.PickFolder(Loc.T("이름을 바꿀 파일이 있는 폴더 선택"), _sources.FirstOrDefault(Directory.Exists));
         if (folder is not null)
         {
             Drop([folder]);
@@ -302,7 +302,7 @@ public sealed partial class BatchRenameViewModel : ObservableObject
     [RelayCommand]
     private void ClearRules()
     {
-        if (Rules.Count == 0 || !_dialogs.Confirm("모든 규칙을 지울까요?"))
+        if (Rules.Count == 0 || !_dialogs.Confirm(Loc.T("모든 규칙을 지울까요?")))
         {
             return;
         }
@@ -400,18 +400,18 @@ public sealed partial class BatchRenameViewModel : ObservableObject
     {
         if (Rules.Count == 0)
         {
-            _dialogs.ShowInfo("저장할 규칙이 없습니다.");
+            _dialogs.ShowInfo(Loc.T("저장할 규칙이 없습니다."));
             return;
         }
 
-        var name = _dialogs.Prompt("프리셋 이름을 입력하세요.", "프리셋 저장", SelectedPreset ?? string.Empty)?.Trim();
+        var name = _dialogs.Prompt(Loc.T("프리셋 이름을 입력하세요."), Loc.T("프리셋 저장"), SelectedPreset ?? string.Empty)?.Trim();
         if (string.IsNullOrEmpty(name))
         {
             return;
         }
 
         var presets = LoadPresets();
-        if (presets.ContainsKey(name) && !_dialogs.Confirm($"'{name}' 프리셋을 덮어쓸까요?"))
+        if (presets.ContainsKey(name) && !_dialogs.Confirm(Loc.F("'{0}' 프리셋을 덮어쓸까요?", name)))
         {
             return;
         }
@@ -439,7 +439,7 @@ public sealed partial class BatchRenameViewModel : ObservableObject
     [RelayCommand(CanExecute = nameof(HasSelectedPreset))]
     private void DeletePreset()
     {
-        if (SelectedPreset is null || !_dialogs.Confirm($"'{SelectedPreset}' 프리셋을 삭제할까요?"))
+        if (SelectedPreset is null || !_dialogs.Confirm(Loc.F("'{0}' 프리셋을 삭제할까요?", SelectedPreset)))
         {
             return;
         }
@@ -480,10 +480,10 @@ public sealed partial class BatchRenameViewModel : ObservableObject
         }
 
         var blocked = Rows.Count(r => r.Status is RenameStatus.Conflict or RenameStatus.Invalid or RenameStatus.Error);
-        var message = $"파일 {targets.Count:N0}개의 이름을 바꿉니다." +
-                      (blocked > 0 ? $"\n충돌/오류가 있는 {blocked:N0}개는 건너뜁니다." : string.Empty) +
-                      "\n\n실행 후 '되돌리기'로 원래 이름으로 돌릴 수 있습니다. 계속할까요?";
-        if (!_dialogs.Confirm(message, "이름 일괄 변경"))
+        var message = Loc.F("파일 {0:N0}개의 이름을 바꿉니다.", targets.Count) +
+                      (blocked > 0 ? Loc.F("\n충돌/오류가 있는 {0:N0}개는 건너뜁니다.", blocked) : string.Empty) +
+                      Loc.T("\n\n실행 후 '되돌리기'로 원래 이름으로 돌릴 수 있습니다. 계속할까요?");
+        if (!_dialogs.Confirm(message, Loc.T("이름 일괄 변경")))
         {
             return;
         }
@@ -504,12 +504,12 @@ public sealed partial class BatchRenameViewModel : ObservableObject
             }
 
             ApplyCompleted(result.Completed);
-            ReportResult("이름 변경", result);
+            ReportResult(Loc.T("이름 변경"), result);
         }
         catch (Exception ex)
         {
             _log.Error("이름 변경 중 오류", ex);
-            _dialogs.ShowError($"이름 변경 중 오류가 발생했습니다.\n\n{ex.Message}");
+            _dialogs.ShowError(Loc.F("이름 변경 중 오류가 발생했습니다.\n\n{0}", ex.Message));
         }
         finally
         {
@@ -523,7 +523,7 @@ public sealed partial class BatchRenameViewModel : ObservableObject
         var journal = RenameJournal.Load(_journalPath);
         if (journal is null || journal.Operations.Count == 0)
         {
-            _dialogs.ShowInfo("되돌릴 기록이 없습니다.");
+            _dialogs.ShowInfo(Loc.T("되돌릴 기록이 없습니다."));
             CanUndo = false;
             return;
         }
@@ -531,18 +531,18 @@ public sealed partial class BatchRenameViewModel : ObservableObject
         var operations = journal.CreateUndoOperations();
         var missing = operations.Where(o => !File.Exists(o.SourcePath)).ToList();
         var valid = operations.Except(missing).ToList();
-        var message = $"{journal.Timestamp:yyyy-MM-dd HH:mm:ss} 에 바꾼 파일 {valid.Count:N0}개를 원래 이름으로 되돌립니다." +
-                      (missing.Count > 0 ? $"\n(이미 옮겨졌거나 삭제된 {missing.Count:N0}개는 건너뜁니다)" : string.Empty) +
-                      "\n\n계속할까요?";
+        var message = Loc.F("{0:yyyy-MM-dd HH:mm:ss} 에 바꾼 파일 {1:N0}개를 원래 이름으로 되돌립니다.", journal.Timestamp, valid.Count) +
+                      (missing.Count > 0 ? Loc.F("\n(이미 옮겨졌거나 삭제된 {0:N0}개는 건너뜁니다)", missing.Count) : string.Empty) +
+                      Loc.T("\n\n계속할까요?");
         if (valid.Count == 0)
         {
-            _dialogs.ShowWarning("되돌릴 수 있는 파일이 없습니다 (모두 이동/삭제됨).");
+            _dialogs.ShowWarning(Loc.T("되돌릴 수 있는 파일이 없습니다 (모두 이동/삭제됨)."));
             RenameJournal.Delete(_journalPath);
             CanUndo = false;
             return;
         }
 
-        if (!_dialogs.Confirm(message, "되돌리기"))
+        if (!_dialogs.Confirm(message, Loc.T("되돌리기")))
         {
             return;
         }
@@ -554,12 +554,12 @@ public sealed partial class BatchRenameViewModel : ObservableObject
             RenameJournal.Delete(_journalPath);
             CanUndo = false;
             ApplyCompleted(result.Completed);
-            ReportResult("되돌리기", result);
+            ReportResult(Loc.T("되돌리기"), result);
         }
         catch (Exception ex)
         {
             _log.Error("되돌리기 중 오류", ex);
-            _dialogs.ShowError($"되돌리는 중 오류가 발생했습니다.\n\n{ex.Message}");
+            _dialogs.ShowError(Loc.F("되돌리는 중 오류가 발생했습니다.\n\n{0}", ex.Message));
         }
         finally
         {
@@ -572,14 +572,14 @@ public sealed partial class BatchRenameViewModel : ObservableObject
         _log.Info($"{action} 완료: 성공 {result.Completed.Count}개, 실패 {result.Failed.Count}개");
         if (result.Failed.Count == 0)
         {
-            _dialogs.ShowInfo($"{action} 완료: {result.Completed.Count:N0}개");
+            _dialogs.ShowInfo(Loc.F("{0} 완료: {1:N0}개", action, result.Completed.Count));
             return;
         }
 
         var details = string.Join("\n", result.Failed.Take(10).Select(f => $"• {Path.GetFileName(f.Operation.SourcePath)}: {f.Error}"));
         _dialogs.ShowWarning(
-            $"{action}: 성공 {result.Completed.Count:N0}개, 실패 {result.Failed.Count:N0}개\n\n{details}" +
-            (result.Failed.Count > 10 ? "\n…" : string.Empty) + "\n\n전체 내용은 터미널(F12)에서 확인하세요.");
+            Loc.F("{0}: 성공 {1:N0}개, 실패 {2:N0}개\n\n{3}", action, result.Completed.Count, result.Failed.Count, details) +
+            (result.Failed.Count > 10 ? "\n…" : string.Empty) + Loc.T("\n\n전체 내용은 터미널(F12)에서 확인하세요."));
     }
 
     /// <summary>바뀐 파일 경로를 목록에 반영합니다 (순서는 유지).</summary>
@@ -671,8 +671,8 @@ public sealed partial class BatchRenameViewModel : ObservableObject
         var errors = previews.Count(p => p.Status is RenameStatus.Invalid or RenameStatus.Error);
         ChangeCount = ok;
         Summary = previews.Count == 0
-            ? "파일이 없습니다."
-            : $"파일 {previews.Count:N0}개 · 변경 {ok:N0}개 · 충돌 {conflicts:N0}개 · 오류 {errors:N0}개";
+            ? Loc.T("파일이 없습니다.")
+            : Loc.F("파일 {0:N0}개 · 변경 {1:N0}개 · 충돌 {2:N0}개 · 오류 {3:N0}개", previews.Count, ok, conflicts, errors);
         ExecuteCommand.NotifyCanExecuteChanged();
     }
 
@@ -701,9 +701,9 @@ public sealed partial class BatchRenameViewModel : ObservableObject
     {
         SourceDisplay = _sources.Count switch
         {
-            0 => "(지정 안 됨)",
+            0 => Loc.T("(지정 안 됨)"),
             1 => _sources[0],
-            _ => $"{_sources[0]} 외 {_sources.Count - 1}개",
+            _ => Loc.F("{0} 외 {1}개", _sources[0], _sources.Count - 1),
         };
     }
 

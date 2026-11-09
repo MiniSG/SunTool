@@ -1,4 +1,4 @@
-using SunTool.Core.Logging;
+﻿using SunTool.Core.Logging;
 
 namespace SunTool.Modules.SystemInfo.Logic;
 
@@ -17,11 +17,11 @@ public sealed record InfoItem(string Name, string Value, InfoStatus Status = Inf
 {
     public string StatusText => Status switch
     {
-        InfoStatus.Ok => "정상",
-        InfoStatus.Installed => "설치됨",
-        InfoStatus.NotInstalled => "없음",
-        InfoStatus.Warning => "확인 필요",
-        InfoStatus.Error => "오류",
+        InfoStatus.Ok => Loc.T("정상"),
+        InfoStatus.Installed => Loc.T("설치됨"),
+        InfoStatus.NotInstalled => Loc.T("없음"),
+        InfoStatus.Warning => Loc.T("확인 필요"),
+        InfoStatus.Error => Loc.T("오류"),
         _ => string.Empty,
     };
 

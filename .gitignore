@@ -19,3 +19,6 @@ SunTool.software.json
 
 # 매뉴얼 빌드 도구
 node_modules/
+
+# publish.ps1 의 같은 날 빌드 번호 기록
+.build-number

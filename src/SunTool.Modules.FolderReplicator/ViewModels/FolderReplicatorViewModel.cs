@@ -1,4 +1,4 @@
-using System.Collections.ObjectModel;
+﻿using System.Collections.ObjectModel;
 using System.Diagnostics;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -37,10 +37,10 @@ public sealed partial class FolderReplicatorViewModel : ObservableObject
 
     public IReadOnlyList<EnumOption<ConflictPolicy>> ConflictPolicies { get; } =
     [
-        new(ConflictPolicy.Skip, "건너뛰기 (기존 파일 유지)"),
-        new(ConflictPolicy.Overwrite, "덮어쓰기"),
-        new(ConflictPolicy.OverwriteIfNewer, "원본이 더 최신일 때만 덮어쓰기"),
-        new(ConflictPolicy.KeepBoth, "둘 다 유지 (이름 (2) 로 저장)"),
+        new(ConflictPolicy.Skip, Loc.T("건너뛰기 (기존 파일 유지)")),
+        new(ConflictPolicy.Overwrite, Loc.T("덮어쓰기")),
+        new(ConflictPolicy.OverwriteIfNewer, Loc.T("원본이 더 최신일 때만 덮어쓰기")),
+        new(ConflictPolicy.KeepBoth, Loc.T("둘 다 유지 (이름 (2) 로 저장)")),
     ];
 
     [ObservableProperty]
@@ -74,10 +74,10 @@ public sealed partial class FolderReplicatorViewModel : ObservableObject
     private bool _isProgressIndeterminate;
 
     [ObservableProperty]
-    private string _statusText = "원본 폴더를 끌어다 놓으세요.";
+    private string _statusText = Loc.T("원본 폴더를 끌어다 놓으세요.");
 
     [ObservableProperty]
-    private string _selectionSummary = "선택된 폴더 없음";
+    private string _selectionSummary = Loc.T("선택된 폴더 없음");
 
     [ObservableProperty]
     private string? _planSummary;
@@ -89,15 +89,15 @@ public sealed partial class FolderReplicatorViewModel : ObservableObject
         {
             if (string.IsNullOrWhiteSpace(DestinationPath))
             {
-                return "목적 폴더를 지정하세요.";
+                return Loc.T("목적 폴더를 지정하세요.");
             }
 
             if (_rootModel is null || !CreateRootFolder)
             {
-                return $"생성 위치: {DestinationPath}";
+                return Loc.F("생성 위치: {0}", DestinationPath);
             }
 
-            return $"생성 위치: {Path.Combine(DestinationPath, _rootModel.Name)}";
+            return Loc.F("생성 위치: {0}", Path.Combine(DestinationPath, _rootModel.Name));
         }
     }
 
@@ -138,7 +138,7 @@ public sealed partial class FolderReplicatorViewModel : ObservableObject
         var folder = paths?.FirstOrDefault(Directory.Exists);
         if (folder is null)
         {
-            _dialogs.ShowWarning("폴더를 끌어다 놓아 주세요. (파일은 원본으로 쓸 수 없습니다)");
+            _dialogs.ShowWarning(Loc.T("폴더를 끌어다 놓아 주세요. (파일은 원본으로 쓸 수 없습니다)"));
             return;
         }
 
@@ -156,7 +156,7 @@ public sealed partial class FolderReplicatorViewModel : ObservableObject
         var folder = paths?.FirstOrDefault(Directory.Exists);
         if (folder is null)
         {
-            _dialogs.ShowWarning("목적지로 쓸 폴더를 끌어다 놓아 주세요.");
+            _dialogs.ShowWarning(Loc.T("목적지로 쓸 폴더를 끌어다 놓아 주세요."));
             return;
         }
 
@@ -167,7 +167,7 @@ public sealed partial class FolderReplicatorViewModel : ObservableObject
     [RelayCommand(CanExecute = nameof(CanEdit))]
     private async Task BrowseSourceAsync()
     {
-        var folder = _dialogs.PickFolder("원본 폴더 선택", SourcePath);
+        var folder = _dialogs.PickFolder(Loc.T("원본 폴더 선택"), SourcePath);
         if (folder is not null)
         {
             await LoadSourceAsync(folder);
@@ -177,7 +177,7 @@ public sealed partial class FolderReplicatorViewModel : ObservableObject
     [RelayCommand(CanExecute = nameof(CanEdit))]
     private void BrowseDestination()
     {
-        var folder = _dialogs.PickFolder("목적 폴더 선택", DestinationPath);
+        var folder = _dialogs.PickFolder(Loc.T("목적 폴더 선택"), DestinationPath);
         if (folder is not null)
         {
             DestinationPath = folder;
@@ -235,7 +235,7 @@ public sealed partial class FolderReplicatorViewModel : ObservableObject
         if (plan is not null)
         {
             ShowPlan(plan);
-            StatusText = "계산이 끝났습니다. 내용을 확인한 뒤 실행하세요.";
+            StatusText = Loc.T("계산이 끝났습니다. 내용을 확인한 뒤 실행하세요.");
         }
     }
 
@@ -250,10 +250,10 @@ public sealed partial class FolderReplicatorViewModel : ObservableObject
 
         ShowPlan(plan);
         var message =
-            $"다음 위치에 폴더 구조를 만듭니다:\n{plan.DestinationBase}\n\n" +
-            $"• 폴더 {plan.Folders.Count:N0}개 생성\n" +
-            $"• 파일 {plan.Files.Count:N0}개 복사 ({SizeFormatter.Format(plan.TotalBytes)})\n\n계속할까요?";
-        if (!_dialogs.Confirm(message, "폴더 구조 복제"))
+            Loc.F("다음 위치에 폴더 구조를 만듭니다:\n{0}\n\n", plan.DestinationBase) +
+            Loc.F("• 폴더 {0:N0}개 생성\n", plan.Folders.Count) +
+            Loc.F("• 파일 {0:N0}개 복사 ({1})\n\n계속할까요?", plan.Files.Count, SizeFormatter.Format(plan.TotalBytes));
+        if (!_dialogs.Confirm(message, Loc.T("폴더 구조 복제")))
         {
             return;
         }
@@ -268,43 +268,43 @@ public sealed partial class FolderReplicatorViewModel : ObservableObject
         {
             ProgressValue = p.Percent;
             StatusText = p.FoldersDone < p.FoldersTotal
-                ? $"폴더 생성 중... {p.FoldersDone:N0}/{p.FoldersTotal:N0}"
-                : $"파일 복사 중... {p.FilesDone:N0}/{p.FilesTotal:N0} ({SizeFormatter.Format(p.BytesDone)} / {SizeFormatter.Format(p.BytesTotal)})";
+                ? Loc.F("폴더 생성 중... {0:N0}/{1:N0}", p.FoldersDone, p.FoldersTotal)
+                : Loc.F("파일 복사 중... {0:N0}/{1:N0} ({2} / {3})", p.FilesDone, p.FilesTotal, SizeFormatter.Format(p.BytesDone), SizeFormatter.Format(p.BytesTotal));
         });
 
         try
         {
             var result = await ReplicationExecutor.ExecuteAsync(plan, ConflictPolicy, progress, _log, _cts.Token);
             var summary =
-                $"폴더 {result.FoldersCreated:N0}개 생성(기존 {result.FoldersExisting:N0}), " +
-                $"파일 {result.FilesCopied:N0}개 복사, {result.FilesSkipped:N0}개 건너뜀, 오류 {result.Errors:N0}건 " +
-                $"({result.Elapsed.TotalSeconds:0.0}초)";
+                Loc.F("폴더 {0:N0}개 생성(기존 {1:N0}), ", result.FoldersCreated, result.FoldersExisting) +
+                Loc.F("파일 {0:N0}개 복사, {1:N0}개 건너뜀, 오류 {2:N0}건 ", result.FilesCopied, result.FilesSkipped, result.Errors) +
+                Loc.F("({0:0.0}초)", result.Elapsed.TotalSeconds);
 
             if (result.Cancelled)
             {
-                StatusText = "취소됨 — " + summary;
+                StatusText = Loc.T("취소됨 — ") + summary;
                 _log.Warn("복제 취소: " + summary);
             }
             else
             {
                 ProgressValue = 100;
-                StatusText = "완료 — " + summary;
+                StatusText = Loc.T("완료 — ") + summary;
                 _log.Info("복제 완료: " + summary);
                 if (result.Errors > 0)
                 {
-                    _dialogs.ShowWarning($"작업은 끝났지만 오류가 {result.Errors}건 있었습니다.\n자세한 내용은 터미널(F12)에서 확인하세요.");
+                    _dialogs.ShowWarning(Loc.F("작업은 끝났지만 오류가 {0}건 있었습니다.\n자세한 내용은 터미널(F12)에서 확인하세요.", result.Errors));
                 }
                 else
                 {
-                    _dialogs.ShowInfo("폴더 구조 복제가 완료되었습니다.\n\n" + summary);
+                    _dialogs.ShowInfo(Loc.T("폴더 구조 복제가 완료되었습니다.\n\n") + summary);
                 }
             }
         }
         catch (Exception ex)
         {
-            StatusText = "실패: " + ex.Message;
+            StatusText = Loc.T("실패: ") + ex.Message;
             _log.Error("복제 중 오류", ex);
-            _dialogs.ShowError($"복제 중 오류가 발생했습니다.\n\n{ex.Message}");
+            _dialogs.ShowError(Loc.F("복제 중 오류가 발생했습니다.\n\n{0}", ex.Message));
         }
         finally
         {
@@ -317,7 +317,7 @@ public sealed partial class FolderReplicatorViewModel : ObservableObject
     private void Cancel()
     {
         _cts?.Cancel();
-        StatusText = "취소하는 중...";
+        StatusText = Loc.T("취소하는 중...");
     }
 
     [RelayCommand]
@@ -333,7 +333,7 @@ public sealed partial class FolderReplicatorViewModel : ObservableObject
 
         if (string.IsNullOrWhiteSpace(target) || !Directory.Exists(target))
         {
-            _dialogs.ShowWarning("열 수 있는 목적 폴더가 없습니다.");
+            _dialogs.ShowWarning(Loc.T("열 수 있는 목적 폴더가 없습니다."));
             return;
         }
 
@@ -352,13 +352,13 @@ public sealed partial class FolderReplicatorViewModel : ObservableObject
 
         IsBusy = true;
         IsProgressIndeterminate = true;
-        StatusText = "폴더 구조를 읽는 중...";
+        StatusText = Loc.T("폴더 구조를 읽는 중...");
         _cts = new CancellationTokenSource();
         var stopwatch = Stopwatch.StartNew();
 
         try
         {
-            var progress = new Progress<int>(count => StatusText = $"폴더 구조를 읽는 중... ({count:N0}개)");
+            var progress = new Progress<int>(count => StatusText = Loc.F("폴더 구조를 읽는 중... ({0:N0}개)", count));
             var root = await FolderScanner.ScanAsync(folder, progress, _log, _cts.Token);
 
             _rootModel = root;
@@ -368,21 +368,21 @@ public sealed partial class FolderReplicatorViewModel : ObservableObject
             PlanSummary = null;
 
             var errors = _allNodes.Count(n => n.HasError);
-            StatusText = $"폴더 {_allNodes.Count:N0}개를 읽었습니다 ({stopwatch.Elapsed.TotalSeconds:0.0}초)" +
-                         (errors > 0 ? $", 읽기 실패 {errors}개" : string.Empty) +
-                         ". 파일을 복사할 폴더를 체크하세요.";
+            StatusText = Loc.F("폴더 {0:N0}개를 읽었습니다 ({1:0.0}초)", _allNodes.Count, stopwatch.Elapsed.TotalSeconds) +
+                         (errors > 0 ? Loc.F(", 읽기 실패 {0}개", errors) : string.Empty) +
+                         Loc.T(". 파일을 복사할 폴더를 체크하세요.");
             _log.Info($"스캔 완료: {root.FullPath} — 폴더 {_allNodes.Count:N0}개, {stopwatch.ElapsedMilliseconds}ms");
         }
         catch (OperationCanceledException)
         {
-            StatusText = "스캔이 취소되었습니다.";
+            StatusText = Loc.T("스캔이 취소되었습니다.");
             _log.Warn("스캔 취소");
         }
         catch (Exception ex)
         {
-            StatusText = "스캔 실패: " + ex.Message;
+            StatusText = Loc.T("스캔 실패: ") + ex.Message;
             _log.Error($"스캔 실패: {folder}", ex);
-            _dialogs.ShowError($"폴더를 읽지 못했습니다.\n\n{ex.Message}");
+            _dialogs.ShowError(Loc.F("폴더를 읽지 못했습니다.\n\n{0}", ex.Message));
         }
         finally
         {
@@ -424,8 +424,8 @@ public sealed partial class FolderReplicatorViewModel : ObservableObject
     private void UpdateSelectionSummary()
     {
         SelectionSummary = _allNodes.Count == 0
-            ? "선택된 폴더 없음"
-            : $"전체 폴더 {_allNodes.Count:N0}개 중 {_selectedCount:N0}개 선택 (선택한 폴더의 바로 아래 파일만 복사)";
+            ? Loc.T("선택된 폴더 없음")
+            : Loc.F("전체 폴더 {0:N0}개 중 {1:N0}개 선택 (선택한 폴더의 바로 아래 파일만 복사)", _allNodes.Count, _selectedCount);
     }
 
     private HashSet<string> GetSelectedRelativePaths() =>
@@ -459,7 +459,7 @@ public sealed partial class FolderReplicatorViewModel : ObservableObject
         var selected = GetSelectedRelativePaths();
         IsBusy = true;
         IsProgressIndeterminate = true;
-        StatusText = "복사 계획을 계산하는 중...";
+        StatusText = Loc.T("복사 계획을 계산하는 중...");
         try
         {
             var plan = await Task.Run(() => ReplicationPlanner.Build(root, selected, options, _log));
@@ -473,7 +473,7 @@ public sealed partial class FolderReplicatorViewModel : ObservableObject
         catch (Exception ex)
         {
             _log.Error("계획 계산 실패", ex);
-            _dialogs.ShowError($"계획을 계산하지 못했습니다.\n\n{ex.Message}");
+            _dialogs.ShowError(Loc.F("계획을 계산하지 못했습니다.\n\n{0}", ex.Message));
             return null;
         }
         finally
@@ -486,8 +486,8 @@ public sealed partial class FolderReplicatorViewModel : ObservableObject
     private void ShowPlan(ReplicationPlan plan)
     {
         PlanSummary =
-            $"폴더 {plan.Folders.Count:N0}개 생성 · 파일 {plan.Files.Count:N0}개 복사 ({SizeFormatter.Format(plan.TotalBytes)})" +
-            (plan.Warnings.Count > 0 ? $" · 경고 {plan.Warnings.Count}건" : string.Empty);
+            Loc.F("폴더 {0:N0}개 생성 · 파일 {1:N0}개 복사 ({2})", plan.Folders.Count, plan.Files.Count, SizeFormatter.Format(plan.TotalBytes)) +
+            (plan.Warnings.Count > 0 ? Loc.F(" · 경고 {0}건", plan.Warnings.Count) : string.Empty);
     }
 
     private void RefreshCommandStates()

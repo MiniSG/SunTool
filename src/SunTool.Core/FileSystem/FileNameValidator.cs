@@ -1,4 +1,4 @@
-namespace SunTool.Core.FileSystem;
+﻿namespace SunTool.Core.FileSystem;
 
 /// <summary>Windows 파일 이름 규칙 검사.</summary>
 public static class FileNameValidator
@@ -19,28 +19,28 @@ public static class FileNameValidator
     {
         if (string.IsNullOrWhiteSpace(name))
         {
-            return "이름이 비어 있습니다.";
+            return Loc.T("이름이 비어 있습니다.");
         }
 
         if (name.IndexOfAny(InvalidChars) >= 0)
         {
-            return "사용할 수 없는 문자가 있습니다 ( \\ / : * ? \" < > | ).";
+            return Loc.T("사용할 수 없는 문자가 있습니다 ( \\ / : * ? \" < > | ).");
         }
 
         if (name.EndsWith(' ') || name.EndsWith('.'))
         {
-            return "이름은 공백이나 마침표로 끝날 수 없습니다.";
+            return Loc.T("이름은 공백이나 마침표로 끝날 수 없습니다.");
         }
 
         if (name.Length > MaxNameLength)
         {
-            return $"이름이 너무 깁니다 ({name.Length}자, 최대 {MaxNameLength}자).";
+            return Loc.F("이름이 너무 깁니다 ({0}자, 최대 {1}자).", name.Length, MaxNameLength);
         }
 
         var stem = name.Split('.')[0].TrimEnd();
         if (ReservedNames.Contains(stem))
         {
-            return $"'{stem}'은(는) Windows 예약어라 쓸 수 없습니다.";
+            return Loc.F("'{0}'은(는) Windows 예약어라 쓸 수 없습니다.", stem);
         }
 
         return null;

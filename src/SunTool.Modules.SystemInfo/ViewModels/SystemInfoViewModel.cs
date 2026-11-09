@@ -1,4 +1,4 @@
-using System.Collections.ObjectModel;
+﻿using System.Collections.ObjectModel;
 using System.Diagnostics;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -46,7 +46,7 @@ public sealed partial class SystemInfoViewModel : ObservableObject
         _dialogs = dialogs;
         _clipboard = clipboard;
 
-        Categories.Add(new InfoCategoryViewModel(SummaryId, "요약", ""));
+        Categories.Add(new InfoCategoryViewModel(SummaryId, Loc.T("요약"), ""));
         foreach (var provider in _providers)
         {
             Categories.Add(new InfoCategoryViewModel(provider.Id, provider.Title, provider.IconGlyph));
@@ -67,12 +67,12 @@ public sealed partial class SystemInfoViewModel : ObservableObject
     private bool _isBusy;
 
     [ObservableProperty]
-    private string _statusText = "시스템 정보를 수집하는 중...";
+    private string _statusText = Loc.T("시스템 정보를 수집하는 중...");
 
     [ObservableProperty]
     private DateTime? _collectedAt;
 
-    public string DefinitionFileHint => $"감지 목록 파일: {_userDefinitionPath}";
+    public string DefinitionFileHint => Loc.F("감지 목록 파일: {0}", _userDefinitionPath);
 
     partial void OnIsBusyChanged(bool value)
     {
@@ -89,7 +89,7 @@ public sealed partial class SystemInfoViewModel : ObservableObject
     private async Task RefreshAsync()
     {
         IsBusy = true;
-        StatusText = "시스템 정보를 수집하는 중...";
+        StatusText = Loc.T("시스템 정보를 수집하는 중...");
         var stopwatch = Stopwatch.StartNew();
         var catalog = SoftwareCatalog.Load(_userDefinitionPath, _log);
         var context = new CollectionContext(catalog, _log);
@@ -98,7 +98,7 @@ public sealed partial class SystemInfoViewModel : ObservableObject
         foreach (var category in Categories)
         {
             category.IsLoading = true;
-            category.StateText = "수집 중…";
+            category.StateText = Loc.T("수집 중…");
         }
 
         var tasks = _providers.Select(async provider =>
@@ -110,13 +110,13 @@ public sealed partial class SystemInfoViewModel : ObservableObject
                 var result = await Task.Run(() => provider.Collect(context, CancellationToken.None)).WaitAsync(ProviderTimeout);
                 category.Sections = result.Sections;
                 summaries[provider.Id] = result.Summary;
-                category.StateText = $"{watch.Elapsed.TotalSeconds:0.0}초";
+                category.StateText = Loc.F("{0:0.0}초", watch.Elapsed.TotalSeconds);
             }
             catch (Exception ex)
             {
                 _log.Error($"'{provider.Title}' 정보 수집 실패", ex);
-                category.Sections = [new InfoSection("수집 실패", [new InfoItem("오류", ex.Message, InfoStatus.Error)])];
-                category.StateText = "오류";
+                category.Sections = [new InfoSection(Loc.T("수집 실패"), [new InfoItem(Loc.T("오류"), ex.Message, InfoStatus.Error)])];
+                category.StateText = Loc.T("오류");
             }
             finally
             {
@@ -129,17 +129,17 @@ public sealed partial class SystemInfoViewModel : ObservableObject
         BuildSummary(summaries, catalog);
         CollectedAt = DateTime.Now;
         IsBusy = false;
-        StatusText = $"수집 완료 {CollectedAt:HH:mm:ss} ({stopwatch.Elapsed.TotalSeconds:0.0}초)" +
-                     (catalog.UserFilePath is null ? string.Empty : " · 사용자 감지 목록 적용") +
-                     (catalog.UserFileError is null ? string.Empty : " · 사용자 감지 목록 오류(기본값 사용)");
+        StatusText = Loc.F("수집 완료 {0:HH:mm:ss} ({1:0.0}초)", CollectedAt, stopwatch.Elapsed.TotalSeconds) +
+                     (catalog.UserFilePath is null ? string.Empty : Loc.T(" · 사용자 감지 목록 적용")) +
+                     (catalog.UserFileError is null ? string.Empty : Loc.T(" · 사용자 감지 목록 오류(기본값 사용)"));
         _log.Info($"시스템 정보 수집 완료 ({stopwatch.ElapsedMilliseconds}ms)");
     }
 
     [RelayCommand(CanExecute = nameof(HasData))]
     private void ExportCsv()
     {
-        var path = _dialogs.SaveFile("시스템 정보 CSV로 저장", "CSV 파일 (*.csv)|*.csv",
-            $"시스템정보_{Environment.MachineName}_{DateTime.Now:yyyyMMdd_HHmm}.csv");
+        var path = _dialogs.SaveFile(Loc.T("시스템 정보 CSV로 저장"), Loc.T("CSV 파일 (*.csv)|*.csv"),
+            Loc.F("시스템정보_{0}_{1:yyyyMMdd_HHmm}.csv", Environment.MachineName, DateTime.Now));
         if (path is null)
         {
             return;
@@ -148,13 +148,13 @@ public sealed partial class SystemInfoViewModel : ObservableObject
         try
         {
             SystemInfoReport.WriteCsv(path, AllSections(), CollectedAt ?? DateTime.Now);
-            StatusText = $"저장했습니다: {path}";
+            StatusText = Loc.F("저장했습니다: {0}", path);
             _log.Info(StatusText);
         }
         catch (Exception ex)
         {
             _log.Error("시스템 정보 CSV 저장 실패", ex);
-            _dialogs.ShowError($"저장하지 못했습니다.\n\n{ex.Message}");
+            _dialogs.ShowError(Loc.F("저장하지 못했습니다.\n\n{0}", ex.Message));
         }
     }
 
@@ -163,7 +163,7 @@ public sealed partial class SystemInfoViewModel : ObservableObject
     {
         if (_clipboard.SetText(SystemInfoReport.ToText(AllSections(), CollectedAt ?? DateTime.Now)))
         {
-            StatusText = "전체 내용을 클립보드에 복사했습니다.";
+            StatusText = Loc.T("전체 내용을 클립보드에 복사했습니다.");
         }
     }
 
@@ -180,12 +180,12 @@ public sealed partial class SystemInfoViewModel : ObservableObject
             }
 
             Process.Start(new ProcessStartInfo("notepad.exe", $"\"{_userDefinitionPath}\"") { UseShellExecute = true });
-            StatusText = "감지 목록 파일을 저장한 뒤 [새로고침]을 누르면 적용됩니다.";
+            StatusText = Loc.T("감지 목록 파일을 저장한 뒤 [새로고침]을 누르면 적용됩니다.");
         }
         catch (Exception ex)
         {
             _log.Error("감지 목록 파일을 열지 못했습니다.", ex);
-            _dialogs.ShowError($"파일을 열지 못했습니다.\n\n{ex.Message}");
+            _dialogs.ShowError(Loc.F("파일을 열지 못했습니다.\n\n{0}", ex.Message));
         }
     }
 
@@ -195,16 +195,16 @@ public sealed partial class SystemInfoViewModel : ObservableObject
             .Where(s => !(c.Id == SummaryId && s.Title == ThisPcTitle))
             .Select(s => (c.Title, s)));
 
-    private const string ThisPcTitle = "이 PC";
+    private static string ThisPcTitle => Loc.T("이 PC");
 
     private void BuildSummary(Dictionary<string, List<InfoItem>> summaries, SoftwareCatalog catalog)
     {
         var sections = new List<InfoSection>
         {
             new(ThisPcTitle, [
-                new InfoItem("PC 이름", Environment.MachineName),
-                new InfoItem("수집 시각", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")),
-                new InfoItem("SunTool 버전", AppVersion.Text),
+                new InfoItem(Loc.T("PC 이름"), Environment.MachineName),
+                new InfoItem(Loc.T("수집 시각"), DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")),
+                new InfoItem(Loc.T("SunTool 버전"), AppVersion.Text),
             ]),
         };
 

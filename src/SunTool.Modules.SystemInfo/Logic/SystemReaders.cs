@@ -1,4 +1,4 @@
-using Microsoft.Win32;
+﻿using Microsoft.Win32;
 using SunTool.Core.Logging;
 
 namespace SunTool.Modules.SystemInfo.Logic;
@@ -84,7 +84,7 @@ public static class InstalledProgramReader
             }
             catch (Exception ex) when (ex is UnauthorizedAccessException or System.Security.SecurityException or IOException)
             {
-                log?.Warn($"설치 프로그램 목록 일부를 읽지 못했습니다 ({hive}/{view}): {ex.Message}");
+                log?.Warn(Loc.F("설치 프로그램 목록 일부를 읽지 못했습니다 ({0}/{1}): {2}", hive, view, ex.Message));
             }
         }
 
@@ -110,7 +110,7 @@ public static class PnpDeviceReader
         }
         catch (Exception ex)
         {
-            log?.Warn("장치 목록(WMI)을 읽지 못했습니다.", ex);
+            log?.Warn(Loc.T("장치 목록(WMI)을 읽지 못했습니다."), ex);
             return Array.Empty<PnpDevice>();
         }
     }
@@ -118,12 +118,12 @@ public static class PnpDeviceReader
     /// <summary>장치 관리자 오류 코드 → 상태.</summary>
     public static (InfoStatus Status, string Text) DescribeState(PnpDevice device) => device.ErrorCode switch
     {
-        0 => (InfoStatus.Ok, "정상 작동"),
-        22 => (InfoStatus.Warning, "사용 안 함 (코드 22)"),
-        28 => (InfoStatus.Error, "드라이버 없음 (코드 28)"),
-        10 => (InfoStatus.Error, "시작할 수 없음 (코드 10)"),
-        45 => (InfoStatus.Warning, "현재 연결되어 있지 않음 (코드 45)"),
-        _ => (InfoStatus.Error, $"장치 오류 (코드 {device.ErrorCode})"),
+        0 => (InfoStatus.Ok, Loc.T("정상 작동")),
+        22 => (InfoStatus.Warning, Loc.T("사용 안 함 (코드 22)")),
+        28 => (InfoStatus.Error, Loc.T("드라이버 없음 (코드 28)")),
+        10 => (InfoStatus.Error, Loc.T("시작할 수 없음 (코드 10)")),
+        45 => (InfoStatus.Warning, Loc.T("현재 연결되어 있지 않음 (코드 45)")),
+        _ => (InfoStatus.Error, Loc.F("장치 오류 (코드 {0})", device.ErrorCode)),
     };
 
     /// <summary>장치가 어떤 버스로 연결되었는지 (장치 ID 앞부분).</summary>
@@ -134,10 +134,10 @@ public static class PnpDeviceReader
         {
             "PCI" => "PCI/PCIe",
             "USB" or "USBSTOR" or "FTDIBUS" => "USB",
-            "ACPI" => "메인보드 내장",
-            "MF" => "다기능 확장 카드",
-            "SWD" or "ROOT" => "소프트웨어(가상)",
-            "BTHENUM" => "블루투스",
+            "ACPI" => Loc.T("메인보드 내장"),
+            "MF" => Loc.T("다기능 확장 카드"),
+            "SWD" or "ROOT" => Loc.T("소프트웨어(가상)"),
+            "BTHENUM" => Loc.T("블루투스"),
             _ => prefix,
         };
     }
@@ -176,8 +176,8 @@ public static class ValueText
     /// <summary>시리얼처럼 비어 있을 수 있는 값: 기본값이면 '기록하지 않음' 경고로 표시.</summary>
     public static InfoItem Identity(string name, string? value) =>
         IsPlaceholder(value)
-            ? new InfoItem(name, "(제조사가 기록하지 않음)", InfoStatus.Warning,
-                string.IsNullOrWhiteSpace(value) ? null : $"장치에 기록된 값: '{value!.Trim()}'")
+            ? new InfoItem(name, Loc.T("(제조사가 기록하지 않음)"), InfoStatus.Warning,
+                string.IsNullOrWhiteSpace(value) ? null : Loc.F("장치에 기록된 값: '{0}'", value!.Trim()))
             : new InfoItem(name, value!.Trim());
 
     public static string OrDash(string? value) => string.IsNullOrWhiteSpace(value) ? "-" : value.Trim();

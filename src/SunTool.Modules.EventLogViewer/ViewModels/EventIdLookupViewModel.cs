@@ -1,4 +1,4 @@
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using SunTool.Core.Logging;
@@ -43,10 +43,10 @@ public sealed partial class EventIdLookupViewModel : ObservableObject
     private double _progressValue;
 
     [ObservableProperty]
-    private string _statusText = "이벤트 ID를 입력하고 [검색]을 누르세요. 처음 한 번은 Windows의 이벤트 정의 목록을 만드느라 몇 초 걸립니다.";
+    private string _statusText = Loc.T("이벤트 ID를 입력하고 [검색]을 누르세요. 처음 한 번은 Windows의 이벤트 정의 목록을 만드느라 몇 초 걸립니다.");
 
     [ObservableProperty]
-    private string _catalogInfo = "정의 목록: 아직 만들지 않음";
+    private string _catalogInfo = Loc.T("정의 목록: 아직 만들지 않음");
 
     partial void OnIsBusyChanged(bool value)
     {
@@ -75,7 +75,7 @@ public sealed partial class EventIdLookupViewModel : ObservableObject
         {
             if (!int.TryParse(idText, out var parsed) || parsed < 0)
             {
-                StatusText = "이벤트 ID는 0 이상의 숫자로 입력하세요.";
+                StatusText = Loc.T("이벤트 ID는 0 이상의 숫자로 입력하세요.");
                 return;
             }
 
@@ -83,7 +83,7 @@ public sealed partial class EventIdLookupViewModel : ObservableObject
         }
         else if (string.IsNullOrWhiteSpace(ProviderText))
         {
-            StatusText = "이벤트 ID를 입력하세요. (원본만 입력하면 그 원본의 모든 이벤트를 보여 줍니다)";
+            StatusText = Loc.T("이벤트 ID를 입력하세요. (원본만 입력하면 그 원본의 모든 이벤트를 보여 줍니다)");
             return;
         }
 
@@ -99,11 +99,11 @@ public sealed partial class EventIdLookupViewModel : ObservableObject
         var meanings = Results.Where(r => r.Description.Length > 0).Select(r => r.Summary).Distinct().Count();
         StatusText = Results.Count switch
         {
-            0 when eventId is not null => $"ID {eventId} 의 정의를 찾지 못했습니다. 원본 이름을 비우고 다시 찾아보거나 [웹에서 찾기]를 이용하세요.",
-            0 => "해당 원본의 이벤트 정의를 찾지 못했습니다.",
+            0 when eventId is not null => Loc.F("ID {0} 의 정의를 찾지 못했습니다. 원본 이름을 비우고 다시 찾아보거나 [웹에서 찾기]를 이용하세요.", eventId),
+            0 => Loc.T("해당 원본의 이벤트 정의를 찾지 못했습니다."),
             _ when eventId is not null && providers > 1 =>
-                $"{Results.Count:N0}건 — ID {eventId} 를 쓰는 원본 {providers}개, 서로 다른 설명 {meanings}가지. 원본에 따라 뜻이 다르니 원본을 확인하세요.",
-            _ => $"{Results.Count:N0}건을 찾았습니다.",
+                Loc.F("{0:N0}건 — ID {1} 를 쓰는 원본 {2}개, 서로 다른 설명 {3}가지. 원본에 따라 뜻이 다르니 원본을 확인하세요.", Results.Count, eventId, providers, meanings),
+            _ => Loc.F("{0:N0}건을 찾았습니다.", Results.Count),
         };
         _log.Debug($"이벤트 ID 검색: id={eventId?.ToString() ?? "-"}, 원본='{ProviderText}' → {Results.Count}건");
     }
@@ -122,7 +122,7 @@ public sealed partial class EventIdLookupViewModel : ObservableObject
     {
         if (Selected is not null && _clipboard.SetText(Selected.Details))
         {
-            StatusText = "선택한 정의를 클립보드에 복사했습니다.";
+            StatusText = Loc.T("선택한 정의를 클립보드에 복사했습니다.");
         }
     }
 
@@ -153,22 +153,22 @@ public sealed partial class EventIdLookupViewModel : ObservableObject
 
         IsBusy = true;
         ProgressValue = 0;
-        StatusText = "Windows 이벤트 정의 목록을 준비하는 중...";
+        StatusText = Loc.T("Windows 이벤트 정의 목록을 준비하는 중...");
         try
         {
             var progress = new Progress<CatalogProgress>(p =>
             {
                 ProgressValue = p.Total == 0 ? 0 : p.Done * 100.0 / p.Total;
-                StatusText = $"Windows 이벤트 정의를 읽는 중... {p.Done:N0} / {p.Total:N0} 원본 (처음 한 번만)";
+                StatusText = Loc.F("Windows 이벤트 정의를 읽는 중... {0:N0} / {1:N0} 원본 (처음 한 번만)", p.Done, p.Total);
             });
             await _catalog.EnsureLoadedAsync(forceRebuild, progress, CancellationToken.None);
-            CatalogInfo = $"정의 목록: 원본 {_catalog.ProviderCount:N0}개 · 정의 {_catalog.DefinitionCount:N0}개 · " +
-                          $"{(_catalog.LoadedFromCache ? "저장본" : "새로 만듦")} {_catalog.BuiltAt:yyyy-MM-dd HH:mm}";
+            CatalogInfo = Loc.F("정의 목록: 원본 {0:N0}개 · 정의 {1:N0}개 · ", _catalog.ProviderCount, _catalog.DefinitionCount) +
+                          Loc.F("{0} {1:yyyy-MM-dd HH:mm}", (_catalog.LoadedFromCache ? "저장본" : "새로 만듦"), _catalog.BuiltAt);
             return true;
         }
         catch (Exception ex)
         {
-            StatusText = "정의 목록을 만들지 못했습니다: " + ex.Message;
+            StatusText = Loc.T("정의 목록을 만들지 못했습니다: ") + ex.Message;
             _log.Error("이벤트 정의 목록 생성 실패", ex);
             return false;
         }

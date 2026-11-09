@@ -1,4 +1,4 @@
-using System.Collections.Concurrent;
+﻿using System.Collections.Concurrent;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -51,7 +51,7 @@ public sealed partial class LogConsoleViewModel : ObservableObject, IConsoleCont
         Rebuild();
         logs.EntryWritten += OnEntryWritten;
 
-        Write("SunTool 디버그 터미널. 'help' 를 입력하면 명령 목록을 볼 수 있습니다.");
+        Write(Loc.T("SunTool 디버그 터미널. 'help' 를 입력하면 명령 목록을 볼 수 있습니다."));
     }
 
     /// <summary>새 항목이 추가된 뒤 View 가 맨 아래로 스크롤하도록 알립니다.</summary>
@@ -61,14 +61,14 @@ public sealed partial class LogConsoleViewModel : ObservableObject, IConsoleCont
 
     public IReadOnlyList<EnumOption<LogLevel>> Levels { get; } =
     [
-        new(LogLevel.Trace, "Trace 이상"),
-        new(LogLevel.Debug, "Debug 이상"),
-        new(LogLevel.Info, "Info 이상"),
-        new(LogLevel.Warning, "Warning 이상"),
-        new(LogLevel.Error, "Error 만"),
+        new(LogLevel.Trace, Loc.T("Trace 이상")),
+        new(LogLevel.Debug, Loc.T("Debug 이상")),
+        new(LogLevel.Info, Loc.T("Info 이상")),
+        new(LogLevel.Warning, Loc.T("Warning 이상")),
+        new(LogLevel.Error, Loc.T("Error 만")),
     ];
 
-    public string LogFilePath => _logs.LogFilePath ?? "(파일 기록 안 함)";
+    public string LogFilePath => _logs.LogFilePath ?? Loc.T("(파일 기록 안 함)");
 
     public IReadOnlyCollection<IConsoleCommand> Commands => _processor.Commands;
 
@@ -139,7 +139,7 @@ public sealed partial class LogConsoleViewModel : ObservableObject, IConsoleCont
         var text = string.Join(Environment.NewLine, Entries.Select(e => e.ToString()));
         if (!_clipboard.SetText(text))
         {
-            _dialogs.ShowWarning("클립보드에 복사하지 못했습니다.");
+            _dialogs.ShowWarning(Loc.T("클립보드에 복사하지 못했습니다."));
         }
     }
 
@@ -155,7 +155,7 @@ public sealed partial class LogConsoleViewModel : ObservableObject, IConsoleCont
     [RelayCommand]
     private void SaveToFile()
     {
-        var path = _dialogs.SaveFile("로그 저장", "로그 파일 (*.log)|*.log|텍스트 파일 (*.txt)|*.txt", $"suntool-{DateTime.Now:yyyyMMdd-HHmmss}.log");
+        var path = _dialogs.SaveFile(Loc.T("로그 저장"), Loc.T("로그 파일 (*.log)|*.log|텍스트 파일 (*.txt)|*.txt"), $"suntool-{DateTime.Now:yyyyMMdd-HHmmss}.log");
         if (path is null)
         {
             return;
@@ -164,11 +164,11 @@ public sealed partial class LogConsoleViewModel : ObservableObject, IConsoleCont
         try
         {
             File.WriteAllLines(path, Entries.Select(e => e.ToString()));
-            Write($"저장했습니다: {path}");
+            Write(Loc.F("저장했습니다: {0}", path));
         }
         catch (Exception ex)
         {
-            Write($"저장 실패: {ex.Message}", LogLevel.Error);
+            Write(Loc.F("저장 실패: {0}", ex.Message), LogLevel.Error);
         }
     }
 
@@ -182,7 +182,7 @@ public sealed partial class LogConsoleViewModel : ObservableObject, IConsoleCont
         }
         catch (Exception ex)
         {
-            Write($"로그 폴더를 열지 못했습니다: {ex.Message}", LogLevel.Error);
+            Write(Loc.F("로그 폴더를 열지 못했습니다: {0}", ex.Message), LogLevel.Error);
         }
     }
 
@@ -311,5 +311,5 @@ public sealed partial class LogConsoleViewModel : ObservableObject, IConsoleCont
                || (entry.Exception?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false);
     }
 
-    private void UpdateCount() => CountText = $"{Entries.Count:N0} / {_all.Count:N0} 줄";
+    private void UpdateCount() => CountText = Loc.F("{0:N0} / {1:N0} 줄", Entries.Count, _all.Count);
 }

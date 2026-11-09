@@ -1,4 +1,4 @@
-using System.Net.NetworkInformation;
+﻿using System.Net.NetworkInformation;
 using System.Net.Sockets;
 using System.Text.RegularExpressions;
 using Microsoft.Win32;
@@ -12,7 +12,7 @@ public sealed partial class CommunicationInfoProvider : ISystemInfoProvider
 
     public string Id => "communication";
 
-    public string Title => "통신";
+    public string Title => Loc.T("통신");
 
     public string IconGlyph => "";
 
@@ -43,7 +43,7 @@ public sealed partial class CommunicationInfoProvider : ISystemInfoProvider
         }
         catch (NetworkInformationException ex)
         {
-            result.Sections.Add(new InfoSection("네트워크", [new InfoItem("읽기 실패", ex.Message, InfoStatus.Error)]));
+            result.Sections.Add(new InfoSection(Loc.T("네트워크"), [new InfoItem(Loc.T("읽기 실패"), ex.Message, InfoStatus.Error)]));
             return;
         }
 
@@ -60,15 +60,15 @@ public sealed partial class CommunicationInfoProvider : ISystemInfoProvider
                 wiredUp += isUp ? 1 : 0;
             }
 
-            var section = new InfoSection($"네트워크 · {adapter.Name}");
-            section.Items.Add(new InfoItem("어댑터", adapter.Description, Detail: isVirtual ? "가상 어댑터" : TypeName(adapter.NetworkInterfaceType)));
-            section.Items.Add(new InfoItem("상태", isUp ? "연결됨" : "연결 안 됨", isUp ? InfoStatus.Ok : InfoStatus.None));
+            var section = new InfoSection(Loc.F("네트워크 · {0}", adapter.Name));
+            section.Items.Add(new InfoItem(Loc.T("어댑터"), adapter.Description, Detail: isVirtual ? Loc.T("가상 어댑터") : TypeName(adapter.NetworkInterfaceType)));
+            section.Items.Add(new InfoItem(Loc.T("상태"), isUp ? Loc.T("연결됨") : Loc.T("연결 안 됨"), isUp ? InfoStatus.Ok : InfoStatus.None));
             if (isUp && adapter.Speed > 0)
             {
-                section.Items.Add(new InfoItem("링크 속도", FormatSpeed(adapter.Speed)));
+                section.Items.Add(new InfoItem(Loc.T("링크 속도"), FormatSpeed(adapter.Speed)));
             }
 
-            section.Items.Add(new InfoItem("MAC 주소", FormatMac(adapter.GetPhysicalAddress())));
+            section.Items.Add(new InfoItem(Loc.T("MAC 주소"), FormatMac(adapter.GetPhysicalAddress())));
             AddIpInfo(adapter, section);
 
             if (isWired && !isVirtual)
@@ -79,7 +79,7 @@ public sealed partial class CommunicationInfoProvider : ISystemInfoProvider
             result.Sections.Add(section);
         }
 
-        result.Summary.Add(new InfoItem("유선 LAN", $"{wired}개 (연결됨 {wiredUp}개)"));
+        result.Summary.Add(new InfoItem(Loc.T("유선 LAN"), Loc.F("{0}개 (연결됨 {1}개)", wired, wiredUp)));
     }
 
     private static void AddIpInfo(NetworkInterface adapter, InfoSection section)
@@ -93,13 +93,13 @@ public sealed partial class CommunicationInfoProvider : ISystemInfoProvider
                 .ToList();
             if (ipv4.Count > 0)
             {
-                section.Items.Add(new InfoItem("IPv4 주소", string.Join(", ", ipv4)));
+                section.Items.Add(new InfoItem(Loc.T("IPv4 주소"), string.Join(", ", ipv4)));
             }
 
             var gateways = props.GatewayAddresses.Where(g => g.Address.AddressFamily == AddressFamily.InterNetwork).Select(g => g.Address.ToString()).ToList();
             if (gateways.Count > 0)
             {
-                section.Items.Add(new InfoItem("게이트웨이", string.Join(", ", gateways)));
+                section.Items.Add(new InfoItem(Loc.T("게이트웨이"), string.Join(", ", gateways)));
             }
 
             var dns = props.DnsAddresses.Where(d => d.AddressFamily == AddressFamily.InterNetwork).Select(d => d.ToString()).ToList();
@@ -111,7 +111,7 @@ public sealed partial class CommunicationInfoProvider : ISystemInfoProvider
             var v4 = props.GetIPv4Properties();
             if (v4 is not null)
             {
-                section.Items.Add(new InfoItem("IP 설정", v4.IsDhcpEnabled ? "자동 (DHCP)" : "고정 IP"));
+                section.Items.Add(new InfoItem(Loc.T("IP 설정"), v4.IsDhcpEnabled ? Loc.T("자동 (DHCP)") : Loc.T("고정 IP")));
             }
         }
         catch (Exception ex) when (ex is NetworkInformationException or PlatformNotSupportedException)
@@ -153,13 +153,13 @@ public sealed partial class CommunicationInfoProvider : ISystemInfoProvider
                     if (key.GetValue("*JumboPacket") is string jumboText && int.TryParse(jumboText, out var jumbo))
                     {
                         section.Items.Add(jumbo > 1514
-                            ? new InfoItem("점보 프레임", $"사용 ({jumbo} bytes)", InfoStatus.Ok)
-                            : new InfoItem("점보 프레임", $"사용 안 함 ({jumbo} bytes)", InfoStatus.Warning, "GigE 카메라를 연결하는 포트라면 9014 권장"));
+                            ? new InfoItem(Loc.T("점보 프레임"), Loc.F("사용 ({0} bytes)", jumbo), InfoStatus.Ok)
+                            : new InfoItem(Loc.T("점보 프레임"), Loc.F("사용 안 함 ({0} bytes)", jumbo), InfoStatus.Warning, Loc.T("GigE 카메라를 연결하는 포트라면 9014 권장")));
                     }
 
                     if (key.GetValue("*ReceiveBuffers") is string buffers)
                     {
-                        section.Items.Add(new InfoItem("수신 버퍼", buffers, Detail: "GigE 카메라용 포트는 최대값 권장"));
+                        section.Items.Add(new InfoItem(Loc.T("수신 버퍼"), buffers, Detail: Loc.T("GigE 카메라용 포트는 최대값 권장")));
                     }
 
                     return;
@@ -176,9 +176,9 @@ public sealed partial class CommunicationInfoProvider : ISystemInfoProvider
 
     private static void CollectSerialPorts(CollectionContext context, ProviderResult result)
     {
-        var section = new InfoSection("시리얼 포트 (COM)")
+        var section = new InfoSection(Loc.T("시리얼 포트 (COM)"))
         {
-            Note = "메인보드 내장 포트 외에 USB 변환기·PCI 확장 카드로 추가된 포트인지 표시합니다. (포트를 열어 보지는 않습니다)",
+            Note = Loc.T("메인보드 내장 포트 외에 USB 변환기·PCI 확장 카드로 추가된 포트인지 표시합니다. (포트를 열어 보지는 않습니다)"),
         };
 
         var ports = new List<SerialPortInfo>();
@@ -195,7 +195,7 @@ public sealed partial class CommunicationInfoProvider : ISystemInfoProvider
 
         foreach (var name in systemPorts.Where(n => !ports.Any(p => string.Equals(p.Port, n, StringComparison.OrdinalIgnoreCase))))
         {
-            ports.Add(new SerialPortInfo(name.ToUpperInvariant(), "(장치 이름 없음)", SerialPortKind.Virtual, null));
+            ports.Add(new SerialPortInfo(name.ToUpperInvariant(), Loc.T("(장치 이름 없음)"), SerialPortKind.Virtual, null));
         }
 
         ports = ports.OrderBy(p => int.TryParse(p.Port.AsSpan(3), out var n) ? n : 999).ToList();
@@ -205,7 +205,7 @@ public sealed partial class CommunicationInfoProvider : ISystemInfoProvider
             var added = port.Kind != SerialPortKind.Builtin;
             section.Items.Add(new InfoItem(
                 port.Port,
-                $"{KindText(port.Kind)}{(added ? " — 추가된 포트" : string.Empty)}",
+                Loc.F("{0}{1}", KindText(port.Kind), (added ? " — 추가된 포트" : string.Empty)),
                 port.Device is not null && status != InfoStatus.Ok ? status : added ? InfoStatus.Installed : InfoStatus.None,
                 $"{port.Description}{(stateText.Length > 0 && status != InfoStatus.Ok ? $" · {stateText}" : string.Empty)}"));
         }
@@ -214,13 +214,13 @@ public sealed partial class CommunicationInfoProvider : ISystemInfoProvider
         var builtin = ports.Count - addedPorts.Count;
         if (ports.Count == 0)
         {
-            section.Items.Add(new InfoItem("COM 포트", "없음", InfoStatus.NotInstalled));
+            section.Items.Add(new InfoItem(Loc.T("COM 포트"), Loc.T("없음"), InfoStatus.NotInstalled));
         }
 
         result.Sections.Add(section);
         result.Summary.Add(addedPorts.Count > 0
-            ? new InfoItem("추가된 COM 포트", $"{addedPorts.Count}개 ({string.Join(", ", addedPorts)})", InfoStatus.Installed, builtin > 0 ? $"내장 포트 {builtin}개 별도" : null)
-            : new InfoItem("추가된 COM 포트", "없음", InfoStatus.NotInstalled, builtin > 0 ? $"내장 포트 {builtin}개" : null));
+            ? new InfoItem(Loc.T("추가된 COM 포트"), Loc.F("{0}개 ({1})", addedPorts.Count, string.Join(", ", addedPorts)), InfoStatus.Installed, builtin > 0 ? Loc.F("내장 포트 {0}개 별도", builtin) : null)
+            : new InfoItem(Loc.T("추가된 COM 포트"), Loc.T("없음"), InfoStatus.NotInstalled, builtin > 0 ? Loc.F("내장 포트 {0}개", builtin) : null));
     }
 
     /// <summary>Windows 가 현재 인식한 COM 포트 이름 (SerialPort.GetPortNames 와 같은 출처).</summary>
@@ -252,11 +252,11 @@ public sealed partial class CommunicationInfoProvider : ISystemInfoProvider
 
     private static string KindText(SerialPortKind kind) => kind switch
     {
-        SerialPortKind.Builtin => "메인보드 내장",
-        SerialPortKind.Usb => "USB 변환",
-        SerialPortKind.PciCard => "PCI/PCIe 확장 카드",
-        SerialPortKind.Bluetooth => "블루투스",
-        _ => "가상/기타",
+        SerialPortKind.Builtin => Loc.T("메인보드 내장"),
+        SerialPortKind.Usb => Loc.T("USB 변환"),
+        SerialPortKind.PciCard => Loc.T("PCI/PCIe 확장 카드"),
+        SerialPortKind.Bluetooth => Loc.T("블루투스"),
+        _ => Loc.T("가상/기타"),
     };
 
     // ===== 기타 통신 장치 =====
@@ -274,9 +274,9 @@ public sealed partial class CommunicationInfoProvider : ISystemInfoProvider
             return; // 없으면 카드 자체를 생략
         }
 
-        var section = new InfoSection("기타 통신 · IO 장치")
+        var section = new InfoSection(Loc.T("기타 통신 · IO 장치"))
         {
-            Note = "GPIB, NI DAQ, EtherCAT, CAN, 모션·디지털 IO 보드 등을 장치 이름으로 찾은 결과입니다.",
+            Note = Loc.T("GPIB, NI DAQ, EtherCAT, CAN, 모션·디지털 IO 보드 등을 장치 이름으로 찾은 결과입니다."),
         };
         foreach (var device in devices)
         {
@@ -291,8 +291,8 @@ public sealed partial class CommunicationInfoProvider : ISystemInfoProvider
 
     private static string TypeName(NetworkInterfaceType type) => type switch
     {
-        NetworkInterfaceType.Ethernet or NetworkInterfaceType.GigabitEthernet or NetworkInterfaceType.FastEthernetT => "유선 (이더넷)",
-        NetworkInterfaceType.Wireless80211 => "무선 (Wi-Fi)",
+        NetworkInterfaceType.Ethernet or NetworkInterfaceType.GigabitEthernet or NetworkInterfaceType.FastEthernetT => Loc.T("유선 (이더넷)"),
+        NetworkInterfaceType.Wireless80211 => Loc.T("무선 (Wi-Fi)"),
         _ => type.ToString(),
     };
 

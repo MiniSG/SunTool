@@ -1,4 +1,4 @@
-namespace SunTool.Modules.EventLogViewer.Logic;
+﻿namespace SunTool.Modules.EventLogViewer.Logic;
 
 /// <summary>조회할 이벤트 수준 (여러 개 조합 가능).</summary>
 [Flags]
@@ -36,11 +36,11 @@ public static class EventLevelInfo
 
     public static string ToKorean(EventLevelKind kind) => kind switch
     {
-        EventLevelKind.Critical => "위험",
-        EventLevelKind.Error => "오류",
-        EventLevelKind.Warning => "경고",
-        EventLevelKind.Verbose => "자세한 정보",
-        _ => "정보",
+        EventLevelKind.Critical => Loc.T("위험"),
+        EventLevelKind.Error => Loc.T("오류"),
+        EventLevelKind.Warning => Loc.T("경고"),
+        EventLevelKind.Verbose => Loc.T("자세한 정보"),
+        _ => Loc.T("정보"),
     };
 }
 
@@ -89,9 +89,9 @@ public sealed class EventLogItem
 
     /// <summary>상세 창에 보여줄 전체 내용.</summary>
     public string Details =>
-        $"수준: {LevelText}    날짜 및 시간: {TimeText}    로그: {LogDisplayName}\r\n" +
-        $"원본: {ProviderName}    이벤트 ID: {EventId}    작업 범주: {(string.IsNullOrEmpty(TaskCategory) ? "없음" : TaskCategory)}\r\n" +
-        $"컴퓨터: {MachineName}" + (UserId is null ? string.Empty : $"    사용자: {UserId}") + "\r\n" +
+        Loc.F("수준: {0}    날짜 및 시간: {1}    로그: {2}\r\n", LevelText, TimeText, LogDisplayName) +
+        Loc.F("원본: {0}    이벤트 ID: {1}    작업 범주: {2}\r\n", ProviderName, EventId, (string.IsNullOrEmpty(TaskCategory) ? "없음" : TaskCategory)) +
+        Loc.F("컴퓨터: {0}", MachineName) + (UserId is null ? string.Empty : Loc.F("    사용자: {0}", UserId)) + "\r\n" +
         new string('─', 60) + "\r\n" +
         Message.Replace("\r\n", "\n").Replace("\n", "\r\n");
 }

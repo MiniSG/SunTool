@@ -1,4 +1,4 @@
-using System.Windows;
+﻿using System.Windows;
 using System.Windows.Controls;
 
 namespace SunTool.Wpf.Services;
@@ -35,9 +35,9 @@ internal sealed class InputDialog : Window
             Margin = new Thickness(0, 14, 0, 0),
         };
 
-        var ok = new Button { Content = "확인", IsDefault = true, MinWidth = 80, Margin = new Thickness(0, 0, 8, 0) };
+        var ok = new Button { Content = Loc.T("확인"), IsDefault = true, MinWidth = 80, Margin = new Thickness(0, 0, 8, 0) };
         ok.Click += (_, _) => DialogResult = true;
-        var cancel = new Button { Content = "취소", IsCancel = true, MinWidth = 80 };
+        var cancel = new Button { Content = Loc.T("취소"), IsCancel = true, MinWidth = 80 };
         buttons.Children.Add(ok);
         buttons.Children.Add(cancel);
         panel.Children.Add(buttons);

@@ -1,4 +1,4 @@
-using CommunityToolkit.Mvvm.ComponentModel;
+﻿using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace SunTool.Modules.BatchRename.Logic.Rules;
 
@@ -50,11 +50,11 @@ public sealed partial class RemoveRule : RenameRuleBase
         return count <= 0 ? name : name.Remove(start, count);
     }
 
-    protected override string GetRuleName() => "삭제";
+    protected override string GetRuleName() => Loc.T("삭제");
 
     protected override string BuildSummary() => Mode == RemoveMode.Text
-        ? $"\"{Text}\" 모두 지우기"
+        ? Loc.F("\"{0}\" 모두 지우기", Text)
         : FromEnd
-            ? $"끝에서 {StartIndex}번째부터 {Length}글자 지우기"
-            : $"{StartIndex}번째부터 {Length}글자 지우기";
+            ? Loc.F("끝에서 {0}번째부터 {1}글자 지우기", StartIndex, Length)
+            : Loc.F("{0}번째부터 {1}글자 지우기", StartIndex, Length);
 }

@@ -1,4 +1,4 @@
-using SunTool.Core.FileSystem;
+﻿using SunTool.Core.FileSystem;
 
 namespace SunTool.Modules.BatchRename.Logic;
 
@@ -65,7 +65,7 @@ public static class RenameEngine
                     continue;
                 }
 
-                var error = string.IsNullOrWhiteSpace(name) ? "이름이 비어 있습니다." : FileNameValidator.Validate(fullName);
+                var error = string.IsNullOrWhiteSpace(name) ? Loc.T("이름이 비어 있습니다.") : FileNameValidator.Validate(fullName);
                 if (error is not null)
                 {
                     statuses[i] = RenameStatus.Invalid;
@@ -155,7 +155,7 @@ public static class RenameEngine
                 if (occupancy[target] > 1)
                 {
                     statuses[i] = RenameStatus.Conflict;
-                    messages[i] = "다른 파일과 새 이름이 겹칩니다.";
+                    messages[i] = Loc.T("다른 파일과 새 이름이 겹칩니다.");
                     changed = true;
                     continue;
                 }
@@ -164,7 +164,7 @@ public static class RenameEngine
                 if (!isSelf && !freed.Contains(target) && EntriesOf(item.Directory).Contains(newNames[i]))
                 {
                     statuses[i] = RenameStatus.Conflict;
-                    messages[i] = "같은 이름의 파일(또는 폴더)이 이미 있습니다.";
+                    messages[i] = Loc.T("같은 이름의 파일(또는 폴더)이 이미 있습니다.");
                     changed = true;
                 }
             }
