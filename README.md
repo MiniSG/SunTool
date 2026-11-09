@@ -3,6 +3,7 @@
 C# / WPF(.NET 8) 기반 포터블 윈도우 유틸리티입니다. 기능을 모듈 단위로 추가할 수 있습니다.
 
 - 저장소: https://github.com/MiniSG/SunTool
+- **다운로드: [Releases](https://github.com/MiniSG/SunTool/releases/latest) 에서 `SunTool.exe` 하나만 받으면 됩니다** (설치·.NET 불필요, Windows 10/11 64비트)
 - 라이선스: [MIT](LICENSE)
 - 사용 매뉴얼: [docs/SunTool_사용매뉴얼.pptx](docs/SunTool_사용매뉴얼.pptx)
 
@@ -87,6 +88,17 @@ dotnet build
 ```
 
 버그나 감지되지 않는 SDK는 GitHub Issues에 남겨 주세요. 시스템 정보 감지 문제라면 F12 터미널의 `programs <이름>` 결과를 함께 붙이면 빠르게 확인할 수 있습니다.
+
+## 새 버전 배포
+
+날짜 형식 태그를 올리면 GitHub Actions(`.github/workflows/release.yml`)가 테스트 → 단일 exe 빌드 → Releases 등록을 자동으로 합니다. 태그 날짜가 프로그램 버전이 됩니다.
+
+```powershell
+git tag v2026.11.09
+git push origin v2026.11.09
+```
+
+GitHub의 Actions 탭에서 **Release → Run workflow** 로 직접 실행해도 됩니다(한국 시간 기준 오늘 날짜). 같은 날짜 태그는 한 번만 만들 수 있습니다.
 
 ## 라이선스
 

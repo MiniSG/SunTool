@@ -149,7 +149,7 @@ pres.addSection({ title: "시작하기" });
 {
   const s = contentSlide("시작하기", "시작하기", "실행은 3단계면 끝납니다");
   const flow = [
-    ["\uE8C8", "exe 복사", "SunTool.exe 를 원하는 폴더(USB 가능)에 복사합니다."],
+    ["\uE8C8", "exe 받기", "GitHub Releases 에서 SunTool.exe 를 받아 원하는 폴더(USB 가능)에 둡니다."],
     ["\uE768", "더블클릭 실행", "설치 과정 없이 바로 열립니다. 관리자 권한은 쓰지 마세요."],
     ["\uE700", "기능 선택", "왼쪽 메뉴에서 사용할 기능을 고릅니다. 마지막 기능을 기억합니다."],
   ];
@@ -732,7 +732,7 @@ pres.addSection({ title: "소스 코드" });
   iconCircle(s, 0.88, 1.85, 0.6, String.fromCharCode(0xE774), C.accent1);
   s.addText(
     [
-      { text: "공개 저장소", options: { bold: true, fontSize: 14, color: C.text2, breakLine: true } },
+      { text: "공개 저장소 · 실행 파일은 Releases 의 SunTool.exe", options: { bold: true, fontSize: 13, color: C.text2, breakLine: true } },
       { text: "github.com/MiniSG/SunTool", options: { bold: true, fontSize: 22, color: C.accent1, hyperlink: { url: "https://github.com/MiniSG/SunTool" } } },
     ],
     { x: 1.7, y: 1.55, w: 5.1, h: 1.2, valign: "middle", margin: 0, isTextBox: true, objectName: "repoUrl" }
@@ -748,6 +748,10 @@ pres.addSection({ title: "소스 코드" });
     ["# 최신 코드로 갱신", "8B949E"],
     ["git pull", "E6EDF3"],
     ["", "E6EDF3"],
+    ["# 새 버전 배포 (태그를 올리면 exe 자동 빌드)", "8B949E"],
+    ["git tag v2026.11.09", "E6EDF3"],
+    ["git push origin v2026.11.09", "F2A93B"],
+    ["", "E6EDF3"],
     ["# 고친 내용 올리기 (저장소 권한 필요)", "8B949E"],
     ["git add -A", "E6EDF3"],
     ["git commit -m \"변경 내용\"", "E6EDF3"],
@@ -755,7 +759,7 @@ pres.addSection({ title: "소스 코드" });
   ];
   s.addText(
     code.map(([t, col], i) => ({ text: t || " ", options: { color: col, breakLine: i < code.length - 1 } })),
-    { x: 0.85, y: 3.15, w: 5.9, h: 3.55, fontFace: MONO, fontSize: 13, valign: "top", margin: 0, isTextBox: true, objectName: "gitCode" }
+    { x: 0.85, y: 3.12, w: 5.9, h: 3.65, fontFace: MONO, fontSize: 12, valign: "top", margin: 0, isTextBox: true, objectName: "gitCode" }
   );
 
   // 오른쪽: MIT 라이선스

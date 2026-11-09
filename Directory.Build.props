@@ -14,8 +14,9 @@
     같은 날 다시 빌드하면 같은 버전이 됩니다.
   -->
   <PropertyGroup>
-    <SunToolBuildDate>$([System.DateTime]::Now.ToString('yyyy.MM.dd'))</SunToolBuildDate>
-    <Version>$([System.DateTime]::Now.ToString('yyyy.M.d'))</Version>
+    <!-- 릴리스 빌드(GitHub Actions)는 -p:SunToolBuildDate=yyyy.MM.dd 로 태그 날짜를 넘깁니다. -->
+    <SunToolBuildDate Condition="'$(SunToolBuildDate)' == ''">$([System.DateTime]::Now.ToString('yyyy.MM.dd'))</SunToolBuildDate>
+    <Version>$(SunToolBuildDate.Substring(0,4)).$([MSBuild]::Add($(SunToolBuildDate.Substring(5,2)), 0)).$([MSBuild]::Add($(SunToolBuildDate.Substring(8,2)), 0))</Version>
     <InformationalVersion>$(SunToolBuildDate)</InformationalVersion>
     <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
   </PropertyGroup>
