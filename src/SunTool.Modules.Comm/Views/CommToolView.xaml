@@ -1,0 +1,592 @@
+﻿<UserControl x:Class="SunTool.Modules.Comm.Views.CommToolView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:l="clr-namespace:SunTool.Wpf.Localization;assembly=SunTool.Wpf"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:SunTool.Modules.Comm.ViewModels"
+             xmlns:logic="clr-namespace:SunTool.Modules.Comm.Logic"
+             xmlns:v="clr-namespace:SunTool.Modules.Comm.Views"
+             mc:Ignorable="d"
+             d:DataContext="{d:DesignInstance Type=vm:CommToolViewModel}"
+             d:DesignWidth="1150" d:DesignHeight="760">
+
+    <UserControl.Resources>
+        <SolidColorBrush x:Key="RxSoftBrush" Color="#E7F5EC" />
+        <!-- 검색 일치 하이라이트 (Ctrl+F 처럼 노란 배경) -->
+        <SolidColorBrush x:Key="SearchHighlightBrush" Color="#FFE066" />
+
+        <!-- 상대 (검색어 하이라이트) -->
+        <DataTemplate x:Key="PeerCell" DataType="{x:Type logic:CommLogEntry}">
+            <TextBlock v:HighlightText.Text="{Binding Peer}" TextTrimming="CharacterEllipsis" ToolTip="{Binding Peer}"
+                       v:HighlightText.Query="{Binding DataContext.SearchText, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                       v:HighlightText.Brush="{StaticResource SearchHighlightBrush}" />
+        </DataTemplate>
+        <SolidColorBrush x:Key="ControlCharBrush" Color="#B4530F" />
+
+        <Style x:Key="GroupLabel" TargetType="{x:Type TextBlock}">
+            <Setter Property="Foreground" Value="{StaticResource TextSecondaryBrush}" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="Margin" Value="0,0,6,0" />
+        </Style>
+
+        <Style x:Key="OptionCheck" TargetType="{x:Type CheckBox}" BasedOn="{StaticResource {x:Type CheckBox}}">
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="Margin" Value="0,0,14,0" />
+        </Style>
+
+        <!-- 연결 설정 한 칸 (라벨 위, 입력 아래) -->
+        <Style x:Key="Field" TargetType="{x:Type StackPanel}">
+            <Setter Property="Margin" Value="0,0,10,0" />
+        </Style>
+
+        <!-- 방향 배지 -->
+        <DataTemplate x:Key="DirectionCell" DataType="{x:Type logic:CommLogEntry}">
+            <Border x:Name="Badge" CornerRadius="3" Padding="6,1" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="0,1,0,0"
+                    Background="{StaticResource SurfaceAltBrush}">
+                <TextBlock x:Name="Label" Text="{Binding DirectionText}" FontSize="11" Foreground="{StaticResource TextSecondaryBrush}" />
+            </Border>
+            <DataTemplate.Triggers>
+                <DataTrigger Binding="{Binding Direction}" Value="Sent">
+                    <Setter TargetName="Badge" Property="Background" Value="{StaticResource AccentSoftBrush}" />
+                    <Setter TargetName="Label" Property="Foreground" Value="{StaticResource AccentBrush}" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding Direction}" Value="Received">
+                    <Setter TargetName="Badge" Property="Background" Value="{StaticResource RxSoftBrush}" />
+                    <Setter TargetName="Label" Property="Foreground" Value="{StaticResource SuccessBrush}" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding Direction}" Value="Error">
+                    <Setter TargetName="Badge" Property="Background" Value="{StaticResource DangerSoftBrush}" />
+                    <Setter TargetName="Label" Property="Foreground" Value="{StaticResource DangerBrush}" />
+                </DataTrigger>
+                <!-- Steal: 방향마다 다른 색 -->
+                <DataTrigger Binding="{Binding Direction}" Value="Relay1To2">
+                    <Setter TargetName="Badge" Property="Background" Value="#EEEDFE" />
+                    <Setter TargetName="Label" Property="Foreground" Value="#534AB7" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding Direction}" Value="Relay2To1">
+                    <Setter TargetName="Badge" Property="Background" Value="#E1F5EE" />
+                    <Setter TargetName="Label" Property="Foreground" Value="#0F6E56" />
+                </DataTrigger>
+            </DataTemplate.Triggers>
+        </DataTemplate>
+
+        <!-- 빠른 명령 버튼 (누르면 보내기, 우클릭: 보내기 칸에 넣기 / 지우기) -->
+        <DataTemplate x:Key="QuickCommandButton" DataType="{x:Type vm:QuickCommand}">
+            <Button Content="{Binding Name}" ToolTip="{Binding ToolTipText}" Padding="10,3" Margin="0,0,6,4"
+                    Command="{Binding DataContext.SendQuickCommandCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                    CommandParameter="{Binding}">
+                <Button.ContextMenu>
+                    <ContextMenu>
+                        <MenuItem Header="{l:T '보내기 칸에 넣기'}"
+                                  Command="{Binding PlacementTarget.Tag.LoadQuickCommandCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                  CommandParameter="{Binding}" />
+                        <MenuItem Header="{l:T '지우기'}"
+                                  Command="{Binding PlacementTarget.Tag.RemoveQuickCommandCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                  CommandParameter="{Binding}" />
+                    </ContextMenu>
+                </Button.ContextMenu>
+                <Button.Tag>
+                    <Binding Path="DataContext" RelativeSource="{RelativeSource AncestorType=UserControl}" />
+                </Button.Tag>
+            </Button>
+        </DataTemplate>
+
+        <!-- COM 포트 목록 한 줄 (지금 없는 포트는 회색 기울임) -->
+        <DataTemplate x:Key="PortItem" DataType="{x:Type logic:SerialPortEntry}">
+            <TextBlock x:Name="Text" Text="{Binding DisplayText}" TextTrimming="CharacterEllipsis" />
+            <DataTemplate.Triggers>
+                <DataTrigger Binding="{Binding IsPresent}" Value="False">
+                    <Setter TargetName="Text" Property="Foreground" Value="{StaticResource TextSecondaryBrush}" />
+                    <Setter TargetName="Text" Property="FontStyle" Value="Italic" />
+                </DataTrigger>
+            </DataTemplate.Triggers>
+        </DataTemplate>
+
+        <!-- 시각 + 간격 -->
+        <DataTemplate x:Key="TimeCell" DataType="{x:Type logic:CommLogEntry}">
+            <StackPanel>
+                <TextBlock Text="{Binding TimeText}" FontFamily="{StaticResource MonoFont}" />
+                <TextBlock Text="{Binding DeltaText}" FontFamily="{StaticResource MonoFont}" FontSize="11" Foreground="{StaticResource TextSecondaryBrush}"
+                           Visibility="{Binding DataContext.ShowDelta, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource BoolToVis}}" />
+            </StackPanel>
+        </DataTemplate>
+
+        <!-- 데이터 (데이터 줄은 바이트, 알림 줄은 메시지) -->
+        <DataTemplate x:Key="DataCell" DataType="{x:Type logic:CommLogEntry}">
+            <Grid>
+                <TextBlock v:ByteText.Bytes="{Binding Data}" TextWrapping="Wrap" FontFamily="{StaticResource MonoFont}"
+                                 v:ByteText.Mode="{Binding DataContext.ViewMode, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                 v:ByteText.Encoding="{Binding DataContext.Encoding, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                 v:ByteText.Query="{Binding DataContext.SearchText, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                 v:ByteText.HighlightBrush="{StaticResource SearchHighlightBrush}"
+                                 v:ByteText.ControlBrush="{StaticResource ControlCharBrush}" v:ByteText.SecondaryBrush="{StaticResource TextSecondaryBrush}"
+                                 Visibility="{Binding IsData, Converter={StaticResource BoolToVis}}" />
+                <TextBlock x:Name="Message" v:HighlightText.Text="{Binding Message}" TextWrapping="Wrap" Foreground="{StaticResource TextSecondaryBrush}"
+                           v:HighlightText.Query="{Binding DataContext.SearchText, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                           v:HighlightText.Brush="{StaticResource SearchHighlightBrush}"
+                           Visibility="{Binding IsData, Converter={StaticResource BoolToVisEx}, ConverterParameter=Invert}" />
+            </Grid>
+            <DataTemplate.Triggers>
+                <DataTrigger Binding="{Binding Direction}" Value="Error">
+                    <Setter TargetName="Message" Property="Foreground" Value="{StaticResource DangerBrush}" />
+                </DataTrigger>
+            </DataTemplate.Triggers>
+        </DataTemplate>
+
+        <!-- 체크섬 결과 -->
+        <DataTemplate x:Key="CheckCell" DataType="{x:Type logic:CommLogEntry}">
+            <TextBlock x:Name="Check" Text="{Binding CheckText}" FontSize="11" FontWeight="SemiBold" Foreground="{StaticResource SuccessBrush}" />
+            <DataTemplate.Triggers>
+                <DataTrigger Binding="{Binding CheckOk}" Value="False">
+                    <Setter TargetName="Check" Property="Foreground" Value="{StaticResource DangerBrush}" />
+                </DataTrigger>
+            </DataTemplate.Triggers>
+        </DataTemplate>
+    </UserControl.Resources>
+
+    <Grid Margin="16,12,16,12">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" MinHeight="140" />
+            <RowDefinition Height="8" />
+            <RowDefinition Height="140" MinHeight="60" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <!-- ===== 연결 ===== -->
+        <Border Grid.Row="0" Style="{StaticResource Card}" Padding="14,10">
+            <DockPanel LastChildFill="True">
+                <StackPanel DockPanel.Dock="Right" VerticalAlignment="Bottom" Margin="12,0,0,0">
+                    <Button Content="{Binding ConnectButtonText}" Command="{Binding ToggleConnectionCommand}" MinWidth="110" Padding="14,6">
+                        <Button.Style>
+                            <Style TargetType="{x:Type Button}" BasedOn="{StaticResource AccentButton}">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsConnected}" Value="True">
+                                        <Setter Property="Background" Value="{StaticResource DangerBrush}" />
+                                        <Setter Property="BorderBrush" Value="{StaticResource DangerBrush}" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Button.Style>
+                    </Button>
+                </StackPanel>
+
+                <WrapPanel VerticalAlignment="Bottom">
+                    <StackPanel Style="{StaticResource Field}">
+                        <TextBlock Text="{l:T '연결 방식'}" Style="{StaticResource FieldLabel}" />
+                        <ComboBox ItemsSource="{Binding Kinds}" SelectedValuePath="Value" DisplayMemberPath="Text"
+                                  SelectedValue="{Binding Kind}" Width="175" IsEnabled="{Binding CanEditConnection}" />
+                    </StackPanel>
+
+                    <!-- 시리얼 -->
+                    <StackPanel Orientation="Horizontal" Visibility="{Binding Kind, Converter={StaticResource EnumToVis}, ConverterParameter='Serial,Relay'}"
+                                IsEnabled="{Binding CanEditConnection}">
+                        <StackPanel Style="{StaticResource Field}">
+                            <TextBlock Text="{l:T 'COM 포트'}" Style="{StaticResource FieldLabel}"
+                                       Visibility="{Binding IsRelayKind, Converter={StaticResource BoolToVisEx}, ConverterParameter=Invert}" />
+                            <TextBlock Text="{l:T '장비 1 쪽 COM 포트'}" Style="{StaticResource FieldLabel}"
+                                       Visibility="{Binding IsRelayKind, Converter={StaticResource BoolToVis}}" />
+                            <StackPanel Orientation="Horizontal">
+                                <ComboBox ItemsSource="{Binding Ports}" SelectedValuePath="Name" SelectedValue="{Binding PortName}" Width="220"
+                                          ToolTip="{Binding PortListHint}" ItemTemplate="{StaticResource PortItem}" />
+                                <Button Command="{Binding RefreshPortListCommand}" Style="{StaticResource IconButton}" Margin="4,0,0,0"
+                                        ToolTip="{l:T 'COM 포트 목록 새로 고침 (포트를 열지 않음)'}">
+                                    <TextBlock Text="&#xE72C;" FontFamily="{StaticResource IconFont}" />
+                                </Button>
+                            </StackPanel>
+                        </StackPanel>
+                        <StackPanel Style="{StaticResource Field}">
+                            <TextBlock Text="{l:T '속도 (bps)'}" Style="{StaticResource FieldLabel}" />
+                            <ComboBox ItemsSource="{Binding BaudRates}" Text="{Binding BaudRate}" IsEditable="True" Width="90" />
+                        </StackPanel>
+                        <StackPanel Style="{StaticResource Field}">
+                            <TextBlock Text="{l:T '데이터 비트'}" Style="{StaticResource FieldLabel}" />
+                            <ComboBox ItemsSource="{Binding DataBitsOptions}" SelectedItem="{Binding DataBits}" Width="60" />
+                        </StackPanel>
+                        <StackPanel Style="{StaticResource Field}">
+                            <TextBlock Text="{l:T '패리티'}" Style="{StaticResource FieldLabel}" />
+                            <ComboBox ItemsSource="{Binding Parities}" SelectedValuePath="Value" DisplayMemberPath="Text" SelectedValue="{Binding Parity}" Width="100" />
+                        </StackPanel>
+                        <StackPanel Style="{StaticResource Field}">
+                            <TextBlock Text="{l:T '정지 비트'}" Style="{StaticResource FieldLabel}" />
+                            <ComboBox ItemsSource="{Binding StopBitsOptions}" SelectedValuePath="Value" DisplayMemberPath="Text" SelectedValue="{Binding StopBits}" Width="60" />
+                        </StackPanel>
+                        <StackPanel Style="{StaticResource Field}">
+                            <TextBlock Text="{l:T '흐름 제어'}" Style="{StaticResource FieldLabel}" />
+                            <ComboBox ItemsSource="{Binding Handshakes}" SelectedValuePath="Value" DisplayMemberPath="Text" SelectedValue="{Binding Handshake}" Width="110" />
+                        </StackPanel>
+                    </StackPanel>
+
+                    <!-- Steal: 장비 2 쪽 포트 + 듣기만 -->
+                    <StackPanel Orientation="Horizontal" Visibility="{Binding IsRelayKind, Converter={StaticResource BoolToVis}}"
+                                IsEnabled="{Binding CanEditConnection}" Margin="0,6,0,0">
+                        <StackPanel Style="{StaticResource Field}">
+                            <TextBlock Text="{l:T '장비 2 쪽 COM 포트'}" Style="{StaticResource FieldLabel}" />
+                            <ComboBox ItemsSource="{Binding Ports}" SelectedValuePath="Name" SelectedValue="{Binding PortName2}" Width="220"
+                                      ToolTip="{Binding PortListHint}" ItemTemplate="{StaticResource PortItem}" />
+                        </StackPanel>
+                        <CheckBox Content="{l:T '듣기만 (전달 안 함)'}" IsChecked="{Binding ListenOnly}" VerticalAlignment="Bottom" Margin="0,0,10,5"
+                                  ToolTip="{l:T 'Y 케이블로 선로를 엿볼 때: 받은 데이터를 반대쪽으로 보내지 않고 기록만 합니다'}" />
+                        <TextBlock Style="{StaticResource HintText}" VerticalAlignment="Bottom" Margin="0,0,0,5" TextWrapping="Wrap" MaxWidth="330"
+                                   Text="{l:T '장비 1 ⇄ [COM 2개] ⇄ 장비 2 사이에 끼워, 오가는 데이터를 전달하며 기록합니다. 통신 설정은 양쪽에 같게 적용됩니다.'}" />
+                    </StackPanel>
+
+                    <!-- TCP 클라이언트 -->
+                    <StackPanel Orientation="Horizontal" Visibility="{Binding Kind, Converter={StaticResource EnumToVis}, ConverterParameter=TcpClient}"
+                                IsEnabled="{Binding CanEditConnection}">
+                        <StackPanel Style="{StaticResource Field}">
+                            <TextBlock Text="{l:T '서버 주소 (IP 또는 이름)'}" Style="{StaticResource FieldLabel}" />
+                            <TextBox Text="{Binding TcpHost, UpdateSourceTrigger=PropertyChanged}" Width="200" />
+                        </StackPanel>
+                        <StackPanel Style="{StaticResource Field}">
+                            <TextBlock Text="{l:T '포트'}" Style="{StaticResource FieldLabel}" />
+                            <TextBox Text="{Binding TcpPort, UpdateSourceTrigger=PropertyChanged}" Width="80" />
+                        </StackPanel>
+                    </StackPanel>
+
+                    <!-- TCP 서버 -->
+                    <StackPanel Orientation="Horizontal" Visibility="{Binding Kind, Converter={StaticResource EnumToVis}, ConverterParameter=TcpServer}"
+                                IsEnabled="{Binding CanEditConnection}">
+                        <StackPanel Style="{StaticResource Field}">
+                            <TextBlock Text="{l:T '받을 IP (0.0.0.0 = 모든 네트워크)'}" Style="{StaticResource FieldLabel}" />
+                            <TextBox Text="{Binding ServerAddress, UpdateSourceTrigger=PropertyChanged}" Width="200" />
+                        </StackPanel>
+                        <StackPanel Style="{StaticResource Field}">
+                            <TextBlock Text="{l:T '포트'}" Style="{StaticResource FieldLabel}" />
+                            <TextBox Text="{Binding ServerPort, UpdateSourceTrigger=PropertyChanged}" Width="80" />
+                        </StackPanel>
+                    </StackPanel>
+
+                    <!-- UDP -->
+                    <StackPanel Orientation="Horizontal" Visibility="{Binding Kind, Converter={StaticResource EnumToVis}, ConverterParameter=Udp}"
+                                IsEnabled="{Binding CanEditConnection}">
+                        <StackPanel Style="{StaticResource Field}">
+                            <TextBlock Text="{l:T '내 포트 (받기, 0 = 자동)'}" Style="{StaticResource FieldLabel}" />
+                            <TextBox Text="{Binding UdpLocalPort, UpdateSourceTrigger=PropertyChanged}" Width="110" />
+                        </StackPanel>
+                        <StackPanel Style="{StaticResource Field}">
+                            <TextBlock Text="{l:T '대상 IP (비우면 마지막 상대에게 답장)'}" Style="{StaticResource FieldLabel}" />
+                            <TextBox Text="{Binding UdpRemoteHost, UpdateSourceTrigger=PropertyChanged}" Width="220" />
+                        </StackPanel>
+                        <StackPanel Style="{StaticResource Field}">
+                            <TextBlock Text="{l:T '대상 포트'}" Style="{StaticResource FieldLabel}" />
+                            <TextBox Text="{Binding UdpRemotePort, UpdateSourceTrigger=PropertyChanged}" Width="80" />
+                        </StackPanel>
+                    </StackPanel>
+                </WrapPanel>
+            </DockPanel>
+        </Border>
+
+        <!-- ===== 로그 보기 도구 ===== -->
+        <StackPanel Grid.Row="1" Margin="0,10,0,6">
+        <DockPanel>
+            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                <Button Content="{l:T '로그 저장'}" Command="{Binding SaveLogCommand}" Margin="0,0,6,0" ToolTip="{l:T '화면에 보이는 줄(필터 적용)을 txt 로 저장합니다'}" />
+                <Button Content="{l:T '지우기'}" Command="{Binding ClearLogCommand}" />
+            </StackPanel>
+            <WrapPanel VerticalAlignment="Center">
+                <TextBlock Text="{l:T '보기'}" Style="{StaticResource GroupLabel}" FontWeight="SemiBold" Foreground="{StaticResource TextPrimaryBrush}" />
+                <ComboBox ItemsSource="{Binding ViewModes}" SelectedValuePath="Value" DisplayMemberPath="Text" SelectedValue="{Binding ViewMode}" Width="80" Margin="0,0,8,0" />
+                <ComboBox ItemsSource="{Binding Encodings}" SelectedValuePath="Value" DisplayMemberPath="Text" SelectedValue="{Binding Encoding}" Width="110" Margin="0,0,14,0"
+                          ToolTip="{l:T '받은 바이트를 글자로 바꿀 때와 텍스트를 보낼 때 쓰는 문자 인코딩'}" />
+                <CheckBox Content="{l:T '송신'}" IsChecked="{Binding ShowSent}" Style="{StaticResource OptionCheck}" />
+                <CheckBox Content="{l:T '수신'}" IsChecked="{Binding ShowReceived}" Style="{StaticResource OptionCheck}"
+                          Visibility="{Binding IsRelayKind, Converter={StaticResource BoolToVisEx}, ConverterParameter=Invert}" />
+                <CheckBox Content="1 → 2" IsChecked="{Binding ShowRelay1To2}" Style="{StaticResource OptionCheck}" ToolTip="{l:T '장비 1 이 장비 2 로 보낸 데이터'}"
+                          Visibility="{Binding IsRelayKind, Converter={StaticResource BoolToVis}}" />
+                <CheckBox Content="2 → 1" IsChecked="{Binding ShowRelay2To1}" Style="{StaticResource OptionCheck}" ToolTip="{l:T '장비 2 가 장비 1 로 보낸 데이터'}"
+                          Visibility="{Binding IsRelayKind, Converter={StaticResource BoolToVis}}" />
+                <CheckBox Content="{l:T '알림'}" IsChecked="{Binding ShowNotices}" Style="{StaticResource OptionCheck}" ToolTip="{l:T '연결·끊김·오류 같은 알림 줄'}" />
+                <CheckBox Content="{l:T '간격(ms)'}" IsChecked="{Binding ShowDelta}" Style="{StaticResource OptionCheck}" ToolTip="{l:T '바로 앞 송수신과의 시간 간격'}" />
+                <CheckBox Content="{l:T '자동 스크롤'}" IsChecked="{Binding AutoScroll}" Style="{StaticResource OptionCheck}" />
+            </WrapPanel>
+        </DockPanel>
+
+        <!-- 검색 (왼쪽) + 수신 묶기 방식 (오른쪽) -->
+        <DockPanel Margin="0,8,0,0">
+            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                <TextBlock Text="{l:T '수신 묶기'}" Style="{StaticResource GroupLabel}" FontWeight="SemiBold" Foreground="{StaticResource TextPrimaryBrush}" />
+                <ComboBox ItemsSource="{Binding FrameModes}" SelectedValuePath="Value" DisplayMemberPath="Text" SelectedValue="{Binding FrameMode}" Width="110" Margin="0,0,8,0"
+                          ToolTip="{l:T '받은 데이터를 한 줄로 나누는 기준'}" />
+                <StackPanel Orientation="Horizontal" Visibility="{Binding FrameMode, Converter={StaticResource EnumToVis}, ConverterParameter=Gap}">
+                    <TextBox Text="{Binding GapMs, UpdateSourceTrigger=PropertyChanged, Delay=400}" Width="50"
+                             ToolTip="{l:T '이 시간(ms) 안에 이어서 들어온 조각을 한 줄로 합칩니다. 0 = 받은 그대로'}" />
+                    <TextBlock Text="ms" Style="{StaticResource GroupLabel}" Margin="4,0,0,0" />
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" Visibility="{Binding FrameMode, Converter={StaticResource EnumToVis}, ConverterParameter=StartEnd}">
+                    <TextBlock Text="{l:T '시작'}" Style="{StaticResource GroupLabel}" />
+                    <TextBox Text="{Binding FrameStart, UpdateSourceTrigger=PropertyChanged, Delay=400}" Width="60" FontFamily="{StaticResource MonoFont}"
+                             ToolTip="{l:T '시작 바이트 (HEX, 예: 02)'}" Margin="0,0,8,0" />
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" Visibility="{Binding FrameMode, Converter={StaticResource EnumToVis}, ConverterParameter='EndMarker,StartEnd'}">
+                    <TextBlock Text="{l:T '끝'}" Style="{StaticResource GroupLabel}" />
+                    <TextBox Text="{Binding FrameEnd, UpdateSourceTrigger=PropertyChanged, Delay=400}" Width="70" FontFamily="{StaticResource MonoFont}"
+                             ToolTip="{l:T '끝 바이트 (HEX, 예: 0D 0A 또는 03)'}" />
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" Visibility="{Binding FrameMode, Converter={StaticResource EnumToVis}, ConverterParameter=FixedLength}">
+                    <TextBox Text="{Binding FrameLength, UpdateSourceTrigger=PropertyChanged, Delay=400}" Width="50" />
+                    <TextBlock Text="{l:T '바이트마다'}" Style="{StaticResource GroupLabel}" Margin="4,0,0,0" />
+                </StackPanel>
+                <TextBlock Text="{Binding FrameError}" Foreground="{StaticResource DangerBrush}" VerticalAlignment="Center" Margin="8,0,0,0" FontSize="11.5" />
+            </StackPanel>
+        <StackPanel Orientation="Horizontal">
+                <TextBlock Text="&#xE721;" FontFamily="{StaticResource IconFont}" Foreground="{StaticResource TextSecondaryBrush}" VerticalAlignment="Center" Margin="0,0,6,0" />
+                <Grid Width="300" Margin="0,0,8,0">
+                    <TextBox x:Name="SearchBox" Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged, Delay=250}"
+                             ToolTip="{l:T 'Enter / F3 = 다음 일치, Shift+Enter / Shift+F3 = 이전 일치'}">
+                        <TextBox.InputBindings>
+                            <KeyBinding Key="Enter" Command="{Binding NextMatchCommand}" />
+                            <KeyBinding Key="Enter" Modifiers="Shift" Command="{Binding PreviousMatchCommand}" />
+                        </TextBox.InputBindings>
+                    </TextBox>
+                    <TextBlock Text="{l:T '검색 (텍스트 · HEX · 상대)'}" Style="{StaticResource HintText}" Margin="8,0,0,0" VerticalAlignment="Center" IsHitTestVisible="False"
+                               Visibility="{Binding Text, ElementName=SearchBox, Converter={StaticResource NotEmptyToVis}, ConverterParameter=Invert}" />
+                </Grid>
+                <StackPanel Orientation="Horizontal" Margin="0,0,10,0" Visibility="{Binding HasSearch, Converter={StaticResource BoolToVis}}">
+                    <TextBlock Text="{Binding MatchText}" Style="{StaticResource HintText}" VerticalAlignment="Center" MinWidth="58" Margin="0,0,4,0" />
+                    <Button Command="{Binding PreviousMatchCommand}" Style="{StaticResource IconButton}" ToolTip="{l:T '이전 일치 (Shift+F3)'}">
+                        <TextBlock Text="&#xE70E;" FontFamily="{StaticResource IconFont}" />
+                    </Button>
+                    <Button Command="{Binding NextMatchCommand}" Style="{StaticResource IconButton}" Margin="2,0,8,0" ToolTip="{l:T '다음 일치 (F3)'}">
+                        <TextBlock Text="&#xE70D;" FontFamily="{StaticResource IconFont}" />
+                    </Button>
+                    <CheckBox Content="{l:T '일치하는 줄만'}" IsChecked="{Binding OnlyMatches}" VerticalAlignment="Center"
+                              ToolTip="{l:T '끄면 모든 줄을 그대로 두고 일치하는 부분만 하이라이트합니다'}" />
+                </StackPanel>
+        </StackPanel>
+        </DockPanel>
+        </StackPanel>
+
+        <!-- ===== 로그 ===== -->
+        <DataGrid x:Name="LogGrid" Grid.Row="2" ItemsSource="{Binding EntriesView}" SelectedItem="{Binding SelectedEntry}"
+                  AutoGenerateColumns="False" IsReadOnly="True" SelectionMode="Single"
+                  CanUserAddRows="False" CanUserDeleteRows="False" CanUserSortColumns="False" CanUserReorderColumns="False"
+                  HeadersVisibility="Column" GridLinesVisibility="Horizontal" HorizontalGridLinesBrush="#EEF0F3"
+                  BorderBrush="{StaticResource LineBrush}" Background="{StaticResource SurfaceBrush}" RowHeaderWidth="0"
+                  EnableRowVirtualization="True" VirtualizingPanel.IsVirtualizing="True" VirtualizingPanel.VirtualizationMode="Recycling"
+                  VirtualizingPanel.ScrollUnit="Pixel" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+            <DataGrid.CellStyle>
+                <Style TargetType="{x:Type DataGridCell}">
+                    <Setter Property="Padding" Value="6,4" />
+                    <Setter Property="BorderThickness" Value="0" />
+                    <Setter Property="VerticalContentAlignment" Value="Top" />
+                    <Setter Property="Template">
+                        <Setter.Value>
+                            <ControlTemplate TargetType="{x:Type DataGridCell}">
+                                <Border Padding="{TemplateBinding Padding}" Background="{TemplateBinding Background}">
+                                    <ContentPresenter />
+                                </Border>
+                            </ControlTemplate>
+                        </Setter.Value>
+                    </Setter>
+                    <Style.Triggers>
+                        <Trigger Property="IsSelected" Value="True">
+                            <Setter Property="Background" Value="{StaticResource AccentSoftBrush}" />
+                            <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}" />
+                        </Trigger>
+                    </Style.Triggers>
+                </Style>
+            </DataGrid.CellStyle>
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="#" Binding="{Binding IndexText}" Width="46">
+                    <DataGridTextColumn.ElementStyle>
+                        <Style TargetType="{x:Type TextBlock}">
+                            <Setter Property="Foreground" Value="{StaticResource TextSecondaryBrush}" />
+                            <Setter Property="FontFamily" Value="{StaticResource MonoFont}" />
+                        </Style>
+                    </DataGridTextColumn.ElementStyle>
+                </DataGridTextColumn>
+                <DataGridTemplateColumn Header="{l:T '시각'}" Width="108" CellTemplate="{StaticResource TimeCell}" />
+                <DataGridTemplateColumn Header="{l:T '방향'}" Width="52" CellTemplate="{StaticResource DirectionCell}" />
+                <DataGridTemplateColumn Header="{l:T '상대'}" Width="130" CellTemplate="{StaticResource PeerCell}" />
+                <DataGridTextColumn Header="{l:T '길이'}" Binding="{Binding LengthText}" Width="44">
+                    <DataGridTextColumn.ElementStyle>
+                        <Style TargetType="{x:Type TextBlock}">
+                            <Setter Property="Foreground" Value="{StaticResource TextSecondaryBrush}" />
+                            <Setter Property="HorizontalAlignment" Value="Right" />
+                        </Style>
+                    </DataGridTextColumn.ElementStyle>
+                </DataGridTextColumn>
+                <DataGridTemplateColumn Header="{l:T '데이터'}" Width="*" CellTemplate="{StaticResource DataCell}" />
+                <DataGridTemplateColumn Header="{l:T '검사'}" Width="58" CellTemplate="{StaticResource CheckCell}" />
+            </DataGrid.Columns>
+        </DataGrid>
+
+        <GridSplitter Grid.Row="3" Height="8" HorizontalAlignment="Stretch" VerticalAlignment="Center" Background="Transparent" ResizeBehavior="PreviousAndNext" />
+
+        <!-- ===== 선택한 줄 HEX 덤프 ===== -->
+        <Border Grid.Row="4" Style="{StaticResource Card}" Padding="12,8">
+            <DockPanel>
+                <DockPanel DockPanel.Dock="Top" Margin="0,0,0,6">
+                    <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" IsEnabled="{Binding HasSelection}">
+                        <Button Content="{l:T 'HEX 복사'}" Command="{Binding CopyHexCommand}" Padding="10,3" Margin="0,0,6,0" />
+                        <Button Content="{l:T '텍스트 복사'}" Command="{Binding CopyTextCommand}" Padding="10,3" Margin="0,0,6,0" />
+                        <Button Content="{l:T '보내기 칸에 넣기'}" Command="{Binding UseAsSendCommand}" Padding="10,3"
+                                ToolTip="{l:T '이 줄의 바이트를 HEX 로 보내기 칸에 넣습니다'}" />
+                    </StackPanel>
+                    <TextBlock Text="{Binding SelectedTitle}" Foreground="{StaticResource TextSecondaryBrush}" VerticalAlignment="Center" />
+                </DockPanel>
+                <TextBox Text="{Binding SelectedDump, Mode=OneWay}" IsReadOnly="True" FontFamily="{StaticResource MonoFont}" FontSize="12.5"
+                         VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" BorderThickness="0" Background="Transparent"
+                         VerticalContentAlignment="Top" Padding="0" />
+            </DockPanel>
+        </Border>
+
+        <!-- ===== 보내기 ===== -->
+        <Border Grid.Row="5" Style="{StaticResource Card}" Padding="14,10" Margin="0,10,0,0">
+            <StackPanel>
+                <DockPanel>
+                    <Button DockPanel.Dock="Right" Content="{Binding SendButtonText}" Command="{Binding SendCommand}" MinWidth="90" Margin="8,0,0,0"
+                            ToolTip="{l:T '보내기 (Enter)'}">
+                        <Button.Style>
+                            <Style TargetType="{x:Type Button}" BasedOn="{StaticResource AccentButton}">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsRepeating}" Value="True">
+                                        <Setter Property="Background" Value="{StaticResource DangerBrush}" />
+                                        <Setter Property="BorderBrush" Value="{StaticResource DangerBrush}" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Button.Style>
+                    </Button>
+                    <!-- Steal: 직접 끼워 넣을 쪽 -->
+                    <ComboBox DockPanel.Dock="Right" ItemsSource="{Binding InjectSides}" SelectedValuePath="Value" DisplayMemberPath="Text"
+                              SelectedValue="{Binding InjectSide}" Width="150" Margin="8,0,0,0"
+                              Visibility="{Binding IsRelayKind, Converter={StaticResource BoolToVis}}"
+                              ToolTip="{l:T '중계 중에 이 쪽 장비로 직접 보냅니다 (시험용 끼워 넣기)'}" />
+                    <ComboBox DockPanel.Dock="Left" ItemsSource="{Binding InputModes}" SelectedValuePath="Value" DisplayMemberPath="Text"
+                              SelectedValue="{Binding InputMode}" Width="80" Margin="0,0,8,0" />
+                    <ComboBox x:Name="SendBox" IsEditable="True" ItemsSource="{Binding History}" StaysOpenOnEdit="True"
+                              Text="{Binding SendText, UpdateSourceTrigger=PropertyChanged}" FontFamily="{StaticResource MonoFont}"
+                              ToolTip="{l:T '보낼 내용 (Enter 로 보내기, 목록에서 최근에 보낸 내용 선택)'}">
+                        <ComboBox.InputBindings>
+                            <KeyBinding Key="Enter" Command="{Binding SendCommand}" />
+                        </ComboBox.InputBindings>
+                    </ComboBox>
+                </DockPanel>
+                <TextBlock Text="{Binding SendPreview}" FontFamily="{StaticResource MonoFont}" FontSize="11.5" Margin="88,5,0,0" TextTrimming="CharacterEllipsis">
+                    <TextBlock.Style>
+                        <Style TargetType="{x:Type TextBlock}">
+                            <Setter Property="Foreground" Value="{StaticResource TextSecondaryBrush}" />
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding SendPreviewIsError}" Value="True">
+                                    <Setter Property="Foreground" Value="{StaticResource DangerBrush}" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </TextBlock.Style>
+                </TextBlock>
+                <WrapPanel Margin="0,8,0,0">
+                    <CheckBox IsChecked="{Binding Escapes}" Style="{StaticResource OptionCheck}"
+                              Visibility="{Binding InputMode, Converter={StaticResource EnumToVis}, ConverterParameter=Text}">
+                        <CheckBox.ToolTip>
+                            <l:T Key="텍스트 안의 \r \n \t \0 \\ \xHH 를 제어 문자로 바꿉니다" />
+                        </CheckBox.ToolTip>
+                        <TextBlock>
+                            <TextBlock.Text><l:T Key="이스케이프 해석 (\r \n \xHH)" /></TextBlock.Text>
+                        </TextBlock>
+                    </CheckBox>
+                    <TextBlock Text="{l:T '검사값 붙이기'}" Style="{StaticResource GroupLabel}" />
+                    <ComboBox ItemsSource="{Binding Checks}" SelectedValuePath="Value" DisplayMemberPath="Text" SelectedValue="{Binding Check}" Width="160" Margin="0,0,6,0" />
+                    <ComboBox ItemsSource="{Binding CheckOrders}" SelectedValuePath="Value" DisplayMemberPath="Text" SelectedValue="{Binding CheckOrder}" Width="80" Margin="0,0,10,0"
+                              Visibility="{Binding IsTwoByteCheck, Converter={StaticResource BoolToVis}}" ToolTip="{l:T 'CRC 2바이트를 붙이는 순서 (Modbus RTU 는 LO, HI)'}" />
+                    <CheckBox Content="{l:T '받은 데이터도 검사'}" IsChecked="{Binding VerifyReceived}" Style="{StaticResource OptionCheck}"
+                              Visibility="{Binding HasCheck, Converter={StaticResource BoolToVis}}"
+                              ToolTip="{l:T '받은 줄 끝의 검사값이 맞는지 로그에 ✓ / ✗ 로 표시합니다'}" />
+                    <TextBlock Text="{l:T '끝에 붙이기'}" Style="{StaticResource GroupLabel}" Margin="6,0,6,0" />
+                    <CheckBox Content="CR (0D)" IsChecked="{Binding AppendCr}" Style="{StaticResource OptionCheck}" />
+                    <CheckBox Content="LF (0A)" IsChecked="{Binding AppendLf}" Style="{StaticResource OptionCheck}" />
+                    <Button Content="{l:T '보낸 목록 지우기'}" Command="{Binding ClearHistoryCommand}" Padding="8,2" />
+                </WrapPanel>
+
+                <!-- 반복 보내기 + 파일 보내기 -->
+                <WrapPanel Margin="0,8,0,0">
+                    <CheckBox Content="{l:T '반복 보내기'}" IsChecked="{Binding RepeatEnabled}" Style="{StaticResource OptionCheck}" Margin="0,0,8,0"
+                              IsEnabled="{Binding IsRepeating, Converter={StaticResource InverseBool}}"
+                              ToolTip="{l:T '켜면 [반복 시작]으로 같은 내용을 간격마다 보냅니다'}" />
+                    <TextBlock Text="{l:T '간격'}" Style="{StaticResource GroupLabel}" />
+                    <TextBox Text="{Binding RepeatIntervalMs, UpdateSourceTrigger=PropertyChanged, Delay=400}" Width="60" />
+                    <TextBlock Text="ms" Style="{StaticResource GroupLabel}" Margin="4,0,10,0" />
+                    <TextBlock Text="{l:T '횟수'}" Style="{StaticResource GroupLabel}" />
+                    <TextBox Text="{Binding RepeatCount, UpdateSourceTrigger=PropertyChanged, Delay=400}" Width="50" ToolTip="{l:T '0 = 멈출 때까지 계속'}" />
+                    <Rectangle Width="1" Height="20" Fill="{StaticResource LineBrush}" Margin="16,0,16,0" VerticalAlignment="Center" />
+
+                    <TextBlock Text="{l:T '파일'}" Style="{StaticResource GroupLabel}" FontWeight="SemiBold" Foreground="{StaticResource TextPrimaryBrush}" />
+                    <Button Content="{l:T '파일 열기'}" Command="{Binding OpenSendFileCommand}" Padding="8,2" Margin="0,0,6,0"
+                            IsEnabled="{Binding IsFileSending, Converter={StaticResource InverseBool}}"
+                            ToolTip="{l:T '한 줄씩 보낼 txt 파일 (각 줄은 지금 입력 방식·검사값·CR/LF 설정으로 보냄)'}" />
+                    <TextBlock Text="{Binding SendFileName}" Style="{StaticResource GroupLabel}" MaxWidth="160" TextTrimming="CharacterEllipsis" ToolTip="{Binding SendFilePath}" />
+                    <StackPanel Orientation="Horizontal" Visibility="{Binding HasSendFile, Converter={StaticResource BoolToVis}}">
+                        <TextBlock Text="{l:T '줄'}" Style="{StaticResource GroupLabel}" Margin="6,0,6,0" />
+                        <TextBox Text="{Binding FileStartLine, UpdateSourceTrigger=PropertyChanged}" Width="45" />
+                        <TextBlock Text="~" Style="{StaticResource GroupLabel}" Margin="4,0,4,0" />
+                        <TextBox Text="{Binding FileEndLine, UpdateSourceTrigger=PropertyChanged}" Width="45" />
+                        <TextBlock Style="{StaticResource GroupLabel}" Margin="4,0,8,0">
+                            <Run Text="/ " /><Run Text="{Binding FileLineCount, Mode=OneWay}" />
+                        </TextBlock>
+                        <TextBlock Text="{l:T '간격'}" Style="{StaticResource GroupLabel}" />
+                        <TextBox Text="{Binding FileIntervalMs, UpdateSourceTrigger=PropertyChanged, Delay=400}" Width="55" />
+                        <TextBlock Text="ms" Style="{StaticResource GroupLabel}" Margin="4,0,8,0" />
+                        <Button Content="{Binding FileButtonText}" Command="{Binding ToggleFileSendCommand}" Padding="8,2" />
+                    </StackPanel>
+                    <TextBlock Text="{Binding AutoSendStatus}" Style="{StaticResource HintText}" VerticalAlignment="Center" Margin="12,0,0,0" />
+                </WrapPanel>
+
+                <!-- 빠른 명령 -->
+                <DockPanel Margin="0,8,0,0">
+                    <TextBlock DockPanel.Dock="Left" Text="{l:T '빠른 명령'}" Style="{StaticResource GroupLabel}" FontWeight="SemiBold" Foreground="{StaticResource TextPrimaryBrush}"
+                               VerticalAlignment="Top" Margin="0,4,8,0" />
+                    <Button DockPanel.Dock="Right" Content="{l:T '+ 지금 입력 저장'}" Command="{Binding AddQuickCommandCommand}" Padding="8,2" VerticalAlignment="Top"
+                            ToolTip="{l:T '보내기 칸의 내용을 버튼으로 저장합니다. 버튼 우클릭: 보내기 칸에 넣기 / 지우기'}" />
+                    <Grid>
+                        <ItemsControl ItemsSource="{Binding QuickCommands}" ItemTemplate="{StaticResource QuickCommandButton}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <WrapPanel />
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                        </ItemsControl>
+                        <TextBlock Text="{l:T '자주 보내는 내용을 버튼으로 저장해 두면 한 번에 보낼 수 있습니다.'}" Style="{StaticResource HintText}" VerticalAlignment="Center"
+                                   Visibility="{Binding QuickCommands.Count, Converter={StaticResource EnumToVis}, ConverterParameter=0}" />
+                    </Grid>
+                </DockPanel>
+            </StackPanel>
+        </Border>
+
+        <!-- ===== 상태 ===== -->
+        <DockPanel Grid.Row="6" Margin="2,8,2,0">
+            <TextBlock DockPanel.Dock="Right" Text="{Binding VisibleCountText}" Style="{StaticResource HintText}" Margin="12,0,0,0" />
+            <TextBlock DockPanel.Dock="Right" Text="{Binding CounterText}" Style="{StaticResource HintText}" FontFamily="{StaticResource MonoFont}" Margin="12,0,0,0" />
+            <Ellipse Width="9" Height="9" Margin="0,0,6,0" VerticalAlignment="Center">
+                <Ellipse.Style>
+                    <Style TargetType="{x:Type Ellipse}">
+                        <Setter Property="Fill" Value="{StaticResource LineStrongBrush}" />
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsConnected}" Value="True">
+                                <Setter Property="Fill" Value="{StaticResource SuccessBrush}" />
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding IsConnecting}" Value="True">
+                                <Setter Property="Fill" Value="{StaticResource WarningBrush}" />
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Ellipse.Style>
+            </Ellipse>
+            <TextBlock Text="{Binding StatusText}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center">
+                <TextBlock.Style>
+                    <Style TargetType="{x:Type TextBlock}">
+                        <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}" />
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding StatusIsError}" Value="True">
+                                <Setter Property="Foreground" Value="{StaticResource DangerBrush}" />
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </TextBlock.Style>
+            </TextBlock>
+        </DockPanel>
+    </Grid>
+</UserControl>

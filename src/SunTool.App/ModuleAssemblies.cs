@@ -1,5 +1,6 @@
 using System.Reflection;
 using SunTool.Modules.BatchRename;
+using SunTool.Modules.Comm;
 using SunTool.Modules.EventLogViewer;
 using SunTool.Modules.FolderReplicator;
 using SunTool.Modules.SystemInfo;
@@ -19,5 +20,6 @@ internal static class ModuleAssemblies
         typeof(BatchRenameModule).Assembly,
         typeof(EventLogViewerModule).Assembly,
         typeof(SystemInfoModule).Assembly,
+        typeof(CommModule).Assembly,
     ];
 }

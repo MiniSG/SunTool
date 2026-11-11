@@ -15,6 +15,7 @@ public class LocalizationTests
         typeof(SunTool.Modules.BatchRename.BatchRenameModule).Assembly,
         typeof(SunTool.Modules.EventLogViewer.EventLogViewerModule).Assembly,
         typeof(SunTool.Modules.SystemInfo.SystemInfoModule).Assembly,
+        typeof(SunTool.Modules.Comm.CommModule).Assembly,
     ];
 
     public static IEnumerable<object[]> AssemblyNames => Assemblies.Select(a => new object[] { a.GetName().Name! });

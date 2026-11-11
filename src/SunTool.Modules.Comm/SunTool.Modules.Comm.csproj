@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <RootNamespace>SunTool.Modules.Comm</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- 시리얼 통신 (COM 포트는 사용자가 [연결]을 누를 때만 엽니다) -->
+    <PackageReference Include="System.IO.Ports" Version="8.0.0" />
+    <!-- COM 포트 장치 이름 조회 (Win32_PnPEntity, 포트를 열지 않음) -->
+    <PackageReference Include="System.Management" Version="8.0.0" />
+    <!-- EUC-KR(CP949) 문자 인코딩 -->
+    <PackageReference Include="System.Text.Encoding.CodePages" Version="8.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\SunTool.Core\SunTool.Core.csproj" />
+    <ProjectReference Include="..\SunTool.Wpf\SunTool.Wpf.csproj" />
+  </ItemGroup>
+
+</Project>

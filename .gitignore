@@ -22,3 +22,6 @@ node_modules/
 
 # publish.ps1 의 같은 날 빌드 번호 기록
 .build-number
+
+# 분석용 참고 자료 (외부 프로그램 등, 저장소에 올리지 않음)
+/Ref/

@@ -104,8 +104,8 @@ pres.addSection({ title: "시작하기" });
   s.addText("SunTool 사용 매뉴얼", { placeholder: "title" });
   s.addText(
     [
-      { text: "폴더 구조 복제 · 파일 이름 일괄 변경 · 이벤트 로그 조회 · 시스템 정보", options: { breakLine: true } },
-      { text: "v2026.11.09  ·  2026년 11월  ·  github.com/MiniSG/SunTool", options: { fontSize: 14 } },
+      { text: "폴더 구조 복제 · 파일 이름 일괄 변경 · 이벤트 로그 조회 · 시스템 정보 · 통신 테스트", options: { breakLine: true } },
+      { text: "v2026.11.11  ·  2026년 11월  ·  github.com/MiniSG/SunTool", options: { fontSize: 14 } },
     ],
     { placeholder: "body" }
   );
@@ -119,14 +119,15 @@ pres.addSection({ title: "시작하기" });
     ["\uE8AC", C.accent1, "파일 이름 일괄 변경", "글자 넣기·번호 매기기·찾아 바꾸기를 조합해 한 번에 바꿉니다."],
     [String.fromCharCode(0xE7BA), C.accent4, "이벤트 로그 조회", "위험·오류·경고 로그를 기간으로 모아 보고 이벤트 ID 뜻을 찾습니다."],
     [String.fromCharCode(0xE7F8), C.accent3, "시스템 정보", "PC 사양·COM 포트·카메라 SDK·HALCON·VS를 한 번에 보고 CSV로 저장합니다."],
+    [String.fromCharCode(0xE839), C.accent5, "통신 테스트", "COM·TCP·UDP로 보내고 받으며 텍스트와 HEX로 확인합니다."],
     ["\uE756", C.text1, "디버그 터미널", "F12 키로 실시간 로그를 보고 명령을 실행해 문제를 확인합니다."],
   ];
   items.forEach(([g, color, t, d], i) => {
-    const x = 0.6 + i * 2.47;
-    card(s, x, 1.75, 2.3, 3.4);
-    iconCircle(s, x + 0.25, 2.05, 0.7, g, color);
-    s.addText(t, { x: x + 0.25, y: 2.85, w: 1.95, h: 0.75, valign: "bottom", fontSize: 17, bold: true, color: C.text1, margin: 0, isTextBox: true, objectName: nm("cardTitle") });
-    s.addText(d, { x: x + 0.25, y: 3.7, w: 1.9, h: 1.35, fontSize: 13, color: C.text2, valign: "top", margin: 0, isTextBox: true, objectName: nm("cardBody") });
+    const x = 0.6 + i * 2.06;
+    card(s, x, 1.75, 1.92, 3.4);
+    iconCircle(s, x + 0.2, 2.05, 0.7, g, color);
+    s.addText(t, { x: x + 0.2, y: 2.85, w: 1.6, h: 0.75, valign: "bottom", fontSize: 16, bold: true, color: C.text1, margin: 0, isTextBox: true, objectName: nm("cardTitle") });
+    s.addText(d, { x: x + 0.2, y: 3.7, w: 1.6, h: 1.4, fontSize: 13, color: C.text2, valign: "top", margin: 0, isTextBox: true, objectName: nm("cardBody") });
   });
   const facts = [
     ["설치 없이 실행", "SunTool.exe 파일 하나 (.NET 포함)"],
@@ -601,6 +602,112 @@ pres.addSection({ title: "시스템 정보" });
   );
 }
 
+// ===== 통신 테스트 — 화면과 사용 순서 =====
+pres.addSection({ title: "통신 테스트" });
+{
+  const s = contentSlide("통신 테스트", "기능 5 · 통신 테스트", "보내고 받은 데이터를 텍스트와 HEX로");
+  const mark = screenshot(s, "img_comm-0.png", 0.6, 1.55, 8.0, 1266, 806, "통신 테스트 화면: TCP 서버로 연결해 STX·ETX 로 감싼 온도·습도 명령과 Modbus 요청을 주고받은 로그. 검색어 TEMP 가 노란색으로 표시되고, CRC 검사 결과 CHK 표시와 빠른 명령 버튼이 보임");
+  mark(18, 64, 1);
+  mark(1180, 62, 2);
+  mark(18, 150, 3);
+  mark(972, 150, 4);
+  mark(600, 616, 5);
+  mark(18, 741, 6);
+  const steps = [
+    ["연결 방식 고르기", "화면 ① · COM, TCP, UDP, Steal"],
+    ["[연결]", "화면 ② · COM 포트는 이때만 엽니다"],
+    ["찾기", "화면 ③ · 텍스트·HEX에서 강조, F3"],
+    ["받은 데이터 묶기", "화면 ④ · 시간 간격·끝 문자·길이"],
+    ["보내기", "화면 ⑤ · 텍스트 또는 HEX로 입력"],
+    ["빠른 명령", "화면 ⑥ · 자주 쓰는 내용을 버튼으로"],
+  ];
+  steps.forEach(([t, d], i) => step(s, 8.95, 1.55 + i * 0.88, 3.8, i + 1, t, d));
+}
+
+// ===== 통신 테스트 — 보내기·받기 기능 =====
+{
+  const s = contentSlide("통신 테스트", "기능 5 · 통신 테스트", "보내기와 받기를 돕는 기능");
+  const cards = [
+    [String.fromCharCode(0xE8C1), C.accent1, "수신 묶기", "조각난 데이터를 한 줄로 모읍니다. 시간 간격, 끝 문자(예: 0D 0A), 시작·끝 문자(02~03), 고정 길이 중에서 고릅니다."],
+    [String.fromCharCode(0xE73E), C.accent3, "검사값 자동 처리", "SUM8 · XOR · CRC-16(Modbus/CCITT)을 보낼 때 붙이고, 받은 데이터도 검사해 CHK ✓ / ✗로 표시합니다."],
+    [String.fromCharCode(0xE72C), C.accent2, "반복 보내기", "간격(ms)과 횟수를 정해 같은 내용을 계속 보냅니다. 0회는 [반복 중지]를 누를 때까지 보냅니다."],
+    [String.fromCharCode(0xE8E5), C.accent5, "파일 보내기", "txt 파일을 한 줄씩 보냅니다. 줄 범위와 간격을 정하고, 빈 줄은 건너뜁니다."],
+    [String.fromCharCode(0xE721), C.accent4, "검색", "텍스트·HEX·상대 주소에서 찾아 강조합니다. 일치 개수, 이전·다음, 일치하는 줄만 보기를 지원합니다."],
+    [String.fromCharCode(0xE74E), C.text1, "기록 남기기", "[로그 저장]으로 시각·방향·HEX·텍스트를 파일로 저장합니다. 줄을 고르면 아래에 HEX 덤프가 나옵니다."],
+  ];
+  cards.forEach(([g, color, t, d], i) => {
+    const col = i % 3, row = Math.floor(i / 3);
+    const x = 0.6 + col * 4.1, y = 1.6 + row * 2.2;
+    card(s, x, y, 3.9, 2.0);
+    iconCircle(s, x + 0.25, y + 0.25, 0.55, g, color, color === C.accent2 ? C.text1 : C.background1);
+    s.addText(t, { x: x + 0.95, y: y + 0.25, w: 2.8, h: 0.55, fontSize: 17, bold: true, color: C.text1, valign: "middle", margin: 0, isTextBox: true, objectName: nm("featTitle") });
+    s.addText(d, { x: x + 0.25, y: y + 0.92, w: 3.45, h: 1.0, fontSize: 13, color: C.text2, valign: "top", margin: 0, isTextBox: true, objectName: nm("featBody") });
+  });
+  card(s, 0.6, 6.15, 12.1, 0.75, "EEF3FE");
+  s.addText(
+    [
+      { text: "COM 포트는 [연결]을 누를 때만 엽니다  ", options: { bold: true, color: C.accent1 } },
+      { text: "프로그램을 켜거나 화면을 열 때 자동으로 열지 않습니다. 연결 중에 장치를 뽑으면 연결을 끊고 로그에 남깁니다.", options: { color: C.text1 } },
+    ],
+    { x: 0.85, y: 6.15, w: 11.7, h: 0.75, fontSize: 14, valign: "middle", margin: 0, isTextBox: true, objectName: "comOpenNote" }
+  );
+}
+
+// ===== 통신 테스트 — Steal 모드 =====
+{
+  const s = contentSlide("통신 테스트", "기능 5 · 통신 테스트", "Steal 모드: 두 장비 사이의 통신 엿보기");
+  // 연결 그림: 장비 1 ⇄ COM a [SunTool] COM b ⇄ 장비 2
+  const box = (x, label, sub, fill, color, name) => {
+    s.addShape(pres.shapes.ROUNDED_RECTANGLE, { x, y: 1.75, w: 2.3, h: 1.3, rectRadius: 0.12, fill: { color: fill }, line: { color: fill }, objectName: name });
+    s.addText(
+      [
+        { text: label, options: { bold: true, fontSize: 17, color, breakLine: true } },
+        { text: sub, options: { fontSize: 13, color } },
+      ],
+      { x, y: 1.75, w: 2.3, h: 1.3, align: "center", valign: "middle", margin: 0, isTextBox: true, objectName: name + "Text" }
+    );
+  };
+  box(0.6, "장비 1", "예: PLC, 검사기", C.background2, C.text1, "dev1");
+  box(5.5, "SunTool", "COM 2개 사용", C.text1, C.background1, "suntool");
+  box(10.4, "장비 2", "예: 센서, 리더기", C.background2, C.text1, "dev2");
+  const link = (x, top, bottom, name) => {
+    s.addText(
+      [
+        { text: top, options: { bold: true, fontSize: 14, color: "534AB7", breakLine: true } },
+        { text: "⇄", options: { fontSize: 24, color: C.accent6, breakLine: true } },
+        { text: bottom, options: { bold: true, fontSize: 14, color: "0F6E56" } },
+      ],
+      { x, y: 1.65, w: 2.4, h: 1.5, align: "center", valign: "middle", margin: 0, isTextBox: true, objectName: name }
+    );
+  };
+  link(3.0, "1 → 2", "2 → 1", "link1");
+  link(7.9, "1 → 2", "2 → 1", "link2");
+  s.addText("장비 1 쪽 COM", { x: 2.95, y: 3.15, w: 2.5, h: 0.35, fontSize: 12, color: C.accent6, align: "center", margin: 0, isTextBox: true, objectName: "com1Label" });
+  s.addText("장비 2 쪽 COM", { x: 7.85, y: 3.15, w: 2.5, h: 0.35, fontSize: 12, color: C.accent6, align: "center", margin: 0, isTextBox: true, objectName: "com2Label" });
+
+  screenshot(s, "img_relay-0.png", 0.6, 3.75, 7.6, 1266, 150, "Steal 연결 설정: 장비 1 쪽 COM 포트, 장비 2 쪽 COM 포트, 듣기만 체크 상자, 통신 속도 설정");
+  s.addText(
+    [
+      { text: "통신 설정(속도·패리티 등)은 양쪽에 똑같이 적용됩니다.", options: { bullet: true, breakLine: true } },
+      { text: "로그 방향은 1 → 2(보라), 2 → 1(초록)으로 나뉘고 따로 걸러 볼 수 있습니다.", options: { bullet: true, breakLine: true } },
+      { text: "한쪽 장치가 빠지면 중계를 멈추고, 같은 포트를 양쪽에 고르면 막습니다.", options: { bullet: true } },
+    ],
+    { x: 0.6, y: 4.85, w: 7.6, h: 1.6, fontSize: 14, color: C.text2, valign: "top", margin: 0, paraSpaceAfter: 6, isTextBox: true, objectName: "relayNotes" }
+  );
+
+  card(s, 8.6, 3.75, 4.1, 2.7);
+  s.addText(
+    [
+      { text: "듣기만", options: { bold: true, fontSize: 16, color: C.text1, breakLine: true } },
+      { text: "반대쪽으로 전달하지 않고 기록만 합니다. Y 케이블로 선로를 엿볼 때 씁니다.", options: { fontSize: 13, color: C.text2, breakLine: true } },
+      { text: " ", options: { fontSize: 8, breakLine: true } },
+      { text: "직접 끼워 넣기", options: { bold: true, fontSize: 16, color: C.text1, breakLine: true } },
+      { text: "중계 중에 보내기 칸 옆에서 [장비 1 로] / [장비 2 로]를 골라 시험 데이터를 보냅니다. 반복·파일·빠른 명령도 같은 쪽으로 갑니다.", options: { fontSize: 13, color: C.text2 } },
+    ],
+    { x: 8.85, y: 3.95, w: 3.65, h: 2.35, valign: "top", margin: 0, paraSpaceAfter: 2, isTextBox: true, objectName: "relayOptions" }
+  );
+}
+
 // ===== 12. 디버그 터미널 =====
 pres.addSection({ title: "디버그 터미널" });
 {
@@ -625,8 +732,8 @@ pres.addSection({ title: "디버그 터미널" });
     { x: 8.55, y: 1.65, w: 4.05, h: 1.05, valign: "top", margin: 0, isTextBox: true, objectName: "termOpen" }
   );
   const h = { bold: true, color: C.background1, fill: { color: C.text1 }, fontSize: 14 };
-  const m = { fontFace: MONO, color: C.text1, fontSize: 14 };
-  const d = { color: C.text2, fontSize: 14 };
+  const m = { fontFace: MONO, color: C.text1, fontSize: 13 };
+  const d = { color: C.text2, fontSize: 13 };
   const cmds = [
     ["help", "명령 목록"],
     ["paths", "설정·로그·되돌리기 위치"],
@@ -635,11 +742,13 @@ pres.addSection({ title: "디버그 터미널" });
     ["modules", "로드된 기능 모듈"],
     ["settings", "설정 파일 내용 보기"],
     ["programs 이름", "설치 이름·환경 변수 찾기"],
+    ["comm ports", "COM 포트 목록 (열지 않음)"],
+    ["comm check HEX", "SUM8·XOR·CRC-16 계산"],
     ["clear", "화면 지우기"],
   ];
   s.addTable(
     [[{ text: "명령", options: h }, { text: "하는 일", options: h }], ...cmds.map(([a, b]) => [{ text: a, options: m }, { text: b, options: d }])],
-    { x: 8.35, y: 3.05, w: 4.4, colW: [1.75, 2.65], rowH: 0.42, border: { type: "solid", pt: 0.75, color: "D9DDE3" }, valign: "middle", margin: [0.03, 0.1, 0.03, 0.1], objectName: "cmdTable" }
+    { x: 8.35, y: 2.95, w: 4.4, colW: [1.75, 2.65], rowH: 0.35, border: { type: "solid", pt: 0.75, color: "D9DDE3" }, valign: "middle", margin: [0.03, 0.1, 0.03, 0.1], objectName: "cmdTable" }
   );
 }
 
@@ -654,8 +763,8 @@ pres.addSection({ title: "빌드 환경" });
     [".NET SDK", "8.0 이상 (확인: 8.0.427)"],
     ["편집기 (선택)", "Visual Studio 2022 또는 VS Code"],
     ["UI / 패턴", "WPF + MVVM Toolkit 8.2.2"],
-    ["기타 패키지", "MS DI · EventLog · Management 8.0"],
-    ["테스트", "xUnit (단위 테스트 87개)"],
+    ["기타 패키지", "MS DI · EventLog · Management · Ports 8.0"],
+    ["테스트", "xUnit (단위 테스트 138개)"],
     ["버전 번호", "빌드한 날짜로 자동 (예: 2026.11.09)"],
     ["인터넷", "첫 빌드 때 NuGet 패키지 복원"],
   ];
@@ -700,14 +809,15 @@ pres.addSection({ title: "빌드 환경" });
     ["Modules.BatchRename", "기능 2 파일 이름 일괄 변경"],
     ["Modules.EventLogViewer", "기능 3 이벤트 로그 조회"],
     ["Modules.SystemInfo", "기능 4 시스템 정보"],
-    ["SunTool.Tests", "규칙·충돌·로그·감지 테스트"],
+    ["Modules.Comm", "기능 5 통신 테스트"],
+    ["SunTool.Tests", "규칙·충돌·감지·통신 테스트"],
   ];
   s.addText("src / tests 구성", { x: 0.6, y: 1.55, w: 6, h: 0.42, fontSize: 18, bold: true, color: C.text1, margin: 0, isTextBox: true, objectName: "projHead" });
   projects.forEach(([p, d], i) => {
-    const y = 2.05 + i * 0.61;
-    card(s, 0.6, y, 6.1, 0.52);
-    s.addText(p, { x: 0.85, y, w: 2.85, h: 0.52, fontFace: MONO, fontSize: 14, bold: true, color: i >= 3 && i <= 6 ? C.accent1 : C.text1, valign: "middle", margin: 0, isTextBox: true, objectName: nm("projName") });
-    s.addText(d, { x: 3.75, y, w: 2.85, h: 0.52, fontSize: 14, color: C.text2, valign: "middle", margin: 0, isTextBox: true, objectName: nm("projDesc") });
+    const y = 2.05 + i * 0.54;
+    card(s, 0.6, y, 6.1, 0.46);
+    s.addText(p, { x: 0.85, y, w: 2.85, h: 0.46, fontFace: MONO, fontSize: 14, bold: true, color: i >= 3 && i <= 7 ? C.accent1 : C.text1, valign: "middle", margin: 0, isTextBox: true, objectName: nm("projName") });
+    s.addText(d, { x: 3.75, y, w: 2.85, h: 0.46, fontSize: 14, color: C.text2, valign: "middle", margin: 0, isTextBox: true, objectName: nm("projDesc") });
   });
 
   s.addText("새 기능 추가 4단계", { x: 7.15, y: 1.55, w: 5.6, h: 0.42, fontSize: 18, bold: true, color: C.text1, margin: 0, isTextBox: true, objectName: "extHead" });

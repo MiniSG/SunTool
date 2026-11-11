@@ -30,6 +30,7 @@
     <ProjectReference Include="..\SunTool.Modules.BatchRename\SunTool.Modules.BatchRename.csproj" />
     <ProjectReference Include="..\SunTool.Modules.EventLogViewer\SunTool.Modules.EventLogViewer.csproj" />
     <ProjectReference Include="..\SunTool.Modules.SystemInfo\SunTool.Modules.SystemInfo.csproj" />
+    <ProjectReference Include="..\SunTool.Modules.Comm\SunTool.Modules.Comm.csproj" />
   </ItemGroup>
 
 </Project>
