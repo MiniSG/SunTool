@@ -41,6 +41,11 @@ public sealed class InfoSection(string title, IEnumerable<InfoItem>? items = nul
     public string? Note { get; set; } = note;
 
     public bool HasNote => !string.IsNullOrWhiteSpace(Note);
+
+    /// <summary>네트워크 카드일 때 Windows 연결 이름 (예: "이더넷 2"). 있으면 [어댑터 속성 열기] 버튼을 보여 줍니다.</summary>
+    public string? AdapterName { get; init; }
+
+    public bool HasAdapter => !string.IsNullOrEmpty(AdapterName);
 }
 
 public sealed class ProviderResult

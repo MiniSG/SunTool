@@ -225,7 +225,8 @@ public sealed partial class CommToolViewModel
         }
     }
 
-    [RelayCommand]
+    // 실행 중(반복·파일 보내기)에도 같은 버튼으로 멈출 수 있어야 함
+    [RelayCommand(AllowConcurrentExecutions = true)]
     private async Task ToggleFileSendAsync()
     {
         if (IsFileSending)

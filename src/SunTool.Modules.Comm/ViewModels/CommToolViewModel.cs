@@ -806,7 +806,8 @@ public sealed partial class CommToolViewModel : ObservableObject, IDisposable
     // ===================================================================== 보내기
 
     /// <summary>[보내기]: 반복 보내기가 켜져 있으면 반복 시작/중지, 아니면 한 번.</summary>
-    [RelayCommand]
+    // 실행 중(반복·파일 보내기)에도 같은 버튼으로 멈출 수 있어야 함
+    [RelayCommand(AllowConcurrentExecutions = true)]
     private async Task SendAsync()
     {
         if (IsRepeating)

@@ -145,6 +145,7 @@ public sealed class ComputerInfoProvider : ISystemInfoProvider
         });
         result.Sections.Add(gpu);
 
+        SoftwareDetector.AddUserDefinedSection(context, Id, result);
         return result;
     }
 

@@ -200,7 +200,7 @@
                         </StackPanel>
                         <StackPanel Style="{StaticResource Field}">
                             <TextBlock Text="{l:T '속도 (bps)'}" Style="{StaticResource FieldLabel}" />
-                            <ComboBox ItemsSource="{Binding BaudRates}" Text="{Binding BaudRate}" IsEditable="True" Width="90" />
+                            <ComboBox ItemsSource="{Binding BaudRates}" Text="{Binding BaudRate, Converter={StaticResource IntText}}" IsEditable="True" Width="90" />
                         </StackPanel>
                         <StackPanel Style="{StaticResource Field}">
                             <TextBlock Text="{l:T '데이터 비트'}" Style="{StaticResource FieldLabel}" />
@@ -243,7 +243,7 @@
                         </StackPanel>
                         <StackPanel Style="{StaticResource Field}">
                             <TextBlock Text="{l:T '포트'}" Style="{StaticResource FieldLabel}" />
-                            <TextBox Text="{Binding TcpPort, UpdateSourceTrigger=PropertyChanged}" Width="80" />
+                            <TextBox Text="{Binding TcpPort, Converter={StaticResource IntText}, UpdateSourceTrigger=PropertyChanged}" Width="80" />
                         </StackPanel>
                     </StackPanel>
 
@@ -256,7 +256,7 @@
                         </StackPanel>
                         <StackPanel Style="{StaticResource Field}">
                             <TextBlock Text="{l:T '포트'}" Style="{StaticResource FieldLabel}" />
-                            <TextBox Text="{Binding ServerPort, UpdateSourceTrigger=PropertyChanged}" Width="80" />
+                            <TextBox Text="{Binding ServerPort, Converter={StaticResource IntText}, UpdateSourceTrigger=PropertyChanged}" Width="80" />
                         </StackPanel>
                     </StackPanel>
 
@@ -265,7 +265,7 @@
                                 IsEnabled="{Binding CanEditConnection}">
                         <StackPanel Style="{StaticResource Field}">
                             <TextBlock Text="{l:T '내 포트 (받기, 0 = 자동)'}" Style="{StaticResource FieldLabel}" />
-                            <TextBox Text="{Binding UdpLocalPort, UpdateSourceTrigger=PropertyChanged}" Width="110" />
+                            <TextBox Text="{Binding UdpLocalPort, Converter={StaticResource IntText}, UpdateSourceTrigger=PropertyChanged}" Width="110" />
                         </StackPanel>
                         <StackPanel Style="{StaticResource Field}">
                             <TextBlock Text="{l:T '대상 IP (비우면 마지막 상대에게 답장)'}" Style="{StaticResource FieldLabel}" />
@@ -273,7 +273,7 @@
                         </StackPanel>
                         <StackPanel Style="{StaticResource Field}">
                             <TextBlock Text="{l:T '대상 포트'}" Style="{StaticResource FieldLabel}" />
-                            <TextBox Text="{Binding UdpRemotePort, UpdateSourceTrigger=PropertyChanged}" Width="80" />
+                            <TextBox Text="{Binding UdpRemotePort, Converter={StaticResource IntText}, UpdateSourceTrigger=PropertyChanged}" Width="80" />
                         </StackPanel>
                     </StackPanel>
                 </WrapPanel>
@@ -312,7 +312,7 @@
                 <ComboBox ItemsSource="{Binding FrameModes}" SelectedValuePath="Value" DisplayMemberPath="Text" SelectedValue="{Binding FrameMode}" Width="110" Margin="0,0,8,0"
                           ToolTip="{l:T '받은 데이터를 한 줄로 나누는 기준'}" />
                 <StackPanel Orientation="Horizontal" Visibility="{Binding FrameMode, Converter={StaticResource EnumToVis}, ConverterParameter=Gap}">
-                    <TextBox Text="{Binding GapMs, UpdateSourceTrigger=PropertyChanged, Delay=400}" Width="50"
+                    <TextBox Text="{Binding GapMs, Converter={StaticResource IntText}, UpdateSourceTrigger=PropertyChanged, Delay=400}" Width="50"
                              ToolTip="{l:T '이 시간(ms) 안에 이어서 들어온 조각을 한 줄로 합칩니다. 0 = 받은 그대로'}" />
                     <TextBlock Text="ms" Style="{StaticResource GroupLabel}" Margin="4,0,0,0" />
                 </StackPanel>
@@ -327,7 +327,7 @@
                              ToolTip="{l:T '끝 바이트 (HEX, 예: 0D 0A 또는 03)'}" />
                 </StackPanel>
                 <StackPanel Orientation="Horizontal" Visibility="{Binding FrameMode, Converter={StaticResource EnumToVis}, ConverterParameter=FixedLength}">
-                    <TextBox Text="{Binding FrameLength, UpdateSourceTrigger=PropertyChanged, Delay=400}" Width="50" />
+                    <TextBox Text="{Binding FrameLength, Converter={StaticResource IntText}, UpdateSourceTrigger=PropertyChanged, Delay=400}" Width="50" />
                     <TextBlock Text="{l:T '바이트마다'}" Style="{StaticResource GroupLabel}" Margin="4,0,0,0" />
                 </StackPanel>
                 <TextBlock Text="{Binding FrameError}" Foreground="{StaticResource DangerBrush}" VerticalAlignment="Center" Margin="8,0,0,0" FontSize="11.5" />
@@ -508,10 +508,10 @@
                               IsEnabled="{Binding IsRepeating, Converter={StaticResource InverseBool}}"
                               ToolTip="{l:T '켜면 [반복 시작]으로 같은 내용을 간격마다 보냅니다'}" />
                     <TextBlock Text="{l:T '간격'}" Style="{StaticResource GroupLabel}" />
-                    <TextBox Text="{Binding RepeatIntervalMs, UpdateSourceTrigger=PropertyChanged, Delay=400}" Width="60" />
+                    <TextBox Text="{Binding RepeatIntervalMs, Converter={StaticResource IntText}, UpdateSourceTrigger=PropertyChanged, Delay=400}" Width="60" />
                     <TextBlock Text="ms" Style="{StaticResource GroupLabel}" Margin="4,0,10,0" />
                     <TextBlock Text="{l:T '횟수'}" Style="{StaticResource GroupLabel}" />
-                    <TextBox Text="{Binding RepeatCount, UpdateSourceTrigger=PropertyChanged, Delay=400}" Width="50" ToolTip="{l:T '0 = 멈출 때까지 계속'}" />
+                    <TextBox Text="{Binding RepeatCount, Converter={StaticResource IntText}, UpdateSourceTrigger=PropertyChanged, Delay=400}" Width="50" ToolTip="{l:T '0 = 멈출 때까지 계속'}" />
                     <Rectangle Width="1" Height="20" Fill="{StaticResource LineBrush}" Margin="16,0,16,0" VerticalAlignment="Center" />
 
                     <TextBlock Text="{l:T '파일'}" Style="{StaticResource GroupLabel}" FontWeight="SemiBold" Foreground="{StaticResource TextPrimaryBrush}" />
@@ -521,14 +521,14 @@
                     <TextBlock Text="{Binding SendFileName}" Style="{StaticResource GroupLabel}" MaxWidth="160" TextTrimming="CharacterEllipsis" ToolTip="{Binding SendFilePath}" />
                     <StackPanel Orientation="Horizontal" Visibility="{Binding HasSendFile, Converter={StaticResource BoolToVis}}">
                         <TextBlock Text="{l:T '줄'}" Style="{StaticResource GroupLabel}" Margin="6,0,6,0" />
-                        <TextBox Text="{Binding FileStartLine, UpdateSourceTrigger=PropertyChanged}" Width="45" />
+                        <TextBox Text="{Binding FileStartLine, Converter={StaticResource IntText}, UpdateSourceTrigger=PropertyChanged}" Width="45" />
                         <TextBlock Text="~" Style="{StaticResource GroupLabel}" Margin="4,0,4,0" />
-                        <TextBox Text="{Binding FileEndLine, UpdateSourceTrigger=PropertyChanged}" Width="45" />
+                        <TextBox Text="{Binding FileEndLine, Converter={StaticResource IntText}, UpdateSourceTrigger=PropertyChanged}" Width="45" />
                         <TextBlock Style="{StaticResource GroupLabel}" Margin="4,0,8,0">
                             <Run Text="/ " /><Run Text="{Binding FileLineCount, Mode=OneWay}" />
                         </TextBlock>
                         <TextBlock Text="{l:T '간격'}" Style="{StaticResource GroupLabel}" />
-                        <TextBox Text="{Binding FileIntervalMs, UpdateSourceTrigger=PropertyChanged, Delay=400}" Width="55" />
+                        <TextBox Text="{Binding FileIntervalMs, Converter={StaticResource IntText}, UpdateSourceTrigger=PropertyChanged, Delay=400}" Width="55" />
                         <TextBlock Text="ms" Style="{StaticResource GroupLabel}" Margin="4,0,8,0" />
                         <Button Content="{Binding FileButtonText}" Command="{Binding ToggleFileSendCommand}" Padding="8,2" />
                     </StackPanel>

@@ -131,7 +131,7 @@ public sealed partial class SystemInfoViewModel : ObservableObject
         IsBusy = false;
         StatusText = Loc.F("수집 완료 {0:HH:mm:ss} ({1:0.0}초)", CollectedAt, stopwatch.Elapsed.TotalSeconds) +
                      (catalog.UserFilePath is null ? string.Empty : Loc.T(" · 사용자 감지 목록 적용")) +
-                     (catalog.UserFileError is null ? string.Empty : Loc.T(" · 사용자 감지 목록 오류(기본값 사용)"));
+                     (catalog.UserFileProblems.Count == 0 ? string.Empty : Loc.F(" · 감지 목록 파일 문제 {0}건 (요약 화면 맨 위)", catalog.UserFileProblems.Count));
         _log.Info($"시스템 정보 수집 완료 ({stopwatch.ElapsedMilliseconds}ms)");
     }
 
@@ -189,13 +189,53 @@ public sealed partial class SystemInfoViewModel : ObservableObject
         }
     }
 
+    /// <summary>랜카드의 Windows 속성 창을 엽니다 (IP 직접 수정용). 찾지 못하면 네트워크 연결 창 전체를 엽니다.</summary>
+    [RelayCommand]
+    private void OpenAdapterProperties(string? adapterName)
+    {
+        if (string.IsNullOrEmpty(adapterName))
+        {
+            return;
+        }
+
+        try
+        {
+            if (NetworkAdapterLauncher.TryOpenProperties(adapterName))
+            {
+                _log.Info($"어댑터 속성 창 열기: {adapterName}");
+                StatusText = Loc.F("'{0}' 속성 창을 열었습니다. IP 는 인터넷 프로토콜 버전 4(TCP/IPv4)에서 바꿉니다.", adapterName);
+                return;
+            }
+
+            _log.Warn($"네트워크 연결에서 '{adapterName}' 을(를) 찾지 못해 네트워크 연결 창을 엽니다.");
+        }
+        catch (Exception ex)
+        {
+            // 관리자 확인(UAC)에서 [아니요]를 누른 경우 등
+            _log.Warn($"어댑터 속성 창을 열지 못했습니다: {adapterName}", ex);
+        }
+
+        try
+        {
+            NetworkAdapterLauncher.OpenConnectionsFolder();
+            StatusText = Loc.F("'{0}' 속성 창을 바로 열지 못해 네트워크 연결 창을 열었습니다. 해당 어댑터를 우클릭 → [속성]을 누르세요.", adapterName);
+        }
+        catch (Exception ex)
+        {
+            _log.Error("네트워크 연결 창을 열지 못했습니다.", ex);
+            _dialogs.ShowError(Loc.F("네트워크 연결 창을 열지 못했습니다.\n\n{0}", ex.Message));
+        }
+    }
+
     /// <summary>보고서용 전체 섹션 (요약의 'PC 정보'는 보고서 머리글과 같아서 제외).</summary>
     private IEnumerable<(string Category, InfoSection Section)> AllSections() =>
         Categories.SelectMany(c => c.Sections
-            .Where(s => !(c.Id == SummaryId && s.Title == ThisPcTitle))
+            .Where(s => !(c.Id == SummaryId && (s.Title == ThisPcTitle || s.Title == UserFileProblemTitle)))
             .Select(s => (c.Title, s)));
 
     private static string ThisPcTitle => Loc.T("이 PC");
+
+    private static string UserFileProblemTitle => Loc.F("감지 목록 파일 확인 필요 ({0})", SoftwareCatalog.UserFileName);
 
     private void BuildSummary(Dictionary<string, List<InfoItem>> summaries, SoftwareCatalog catalog)
     {
@@ -216,6 +256,15 @@ public sealed partial class SystemInfoViewModel : ObservableObject
             }
         }
 
+        // 사용자 감지 목록 파일의 문제는 맨 위에 (화면에만, 보고서·CSV 에는 넣지 않음)
+        if (catalog.UserFileProblems.Count > 0)
+        {
+            sections.Insert(0, new InfoSection(
+                UserFileProblemTitle,
+                catalog.UserFileProblems.Select((p, i) => new InfoItem(Loc.F("문제 {0}", i + 1), p, InfoStatus.Warning)),
+                Loc.T("[감지 목록 편집]으로 파일을 고쳐 저장한 뒤 [새로고침]을 누르세요.")));
+        }
+
         var summary = Categories.First(c => c.Id == SummaryId);
         summary.Sections = sections;
         summary.IsLoading = false;
@@ -228,14 +277,22 @@ public sealed partial class SystemInfoViewModel : ObservableObject
           // 기본 목록에 없는 SDK/라이브러리를 여기에 추가하면 [새로고침] 때 함께 확인합니다.
           // 같은 category + name 이면 기본 항목을 덮어씁니다.
           //
-          // category        : camera | vision | devtools
+          // category        : 어느 화면에 표시할지
+          //                     computer      = 컴퓨터 ('추가 감지 항목' 카드)
+          //                     communication = 통신 ('추가 감지 항목' 카드)
+          //                     camera        = 카메라 · 그랩보드
+          //                     vision        = 이미지 라이브러리
+          //                     devtools      = 개발 도구 ('기타 개발 도구' 카드)
           // programPatterns : '프로그램 및 기능'의 이름과 비교할 정규식
           // envVars         : 설치 시 생기는 환경 변수
           // versionFiles    : 버전을 읽을 파일 (%환경변수% 사용 가능, 파일 이름에 * 가능)
           // summary         : true 이면 '요약' 화면에도 표시
+          //
+          // 항목을 더 넣을 때는 아래 [ ] 목록 안에 { ... } 를 쉼표로 이어서 넣습니다 ("software" 는 한 번만).
+          // 정규식에서 + . ( ) [ ] 를 글자 그대로 찾으려면 \\ 를 붙입니다. 예) "^Notepad\\+\\+"
           "software": [
             {
-              "category": "vision",
+              "category": "vision",   // → '이미지 라이브러리' 화면에 표시
               "name": "예시 - 사내 비전 라이브러리",
               "priority": 1,
               "summary": false,

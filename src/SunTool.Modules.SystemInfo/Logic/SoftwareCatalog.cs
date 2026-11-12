@@ -40,6 +40,10 @@ public sealed class SoftwareDefinition
     public string? VersionFromFileName { get; set; }
 
     public List<string> RegistryKeys { get; set; } = new();
+
+    /// <summary>사용자 정의의 잘못된 정규식 등. 있으면 감지하지 않고 그 항목만 '확인 필요'로 표시합니다.</summary>
+    [System.Text.Json.Serialization.JsonIgnore]
+    public string? Error { get; set; }
 }
 
 public sealed class FolderSearchDefinition
@@ -73,19 +77,37 @@ public sealed class SoftwareCatalog
         AllowTrailingCommas = true,
     };
 
-    private SoftwareCatalog(IReadOnlyList<SoftwareDefinition> definitions, string? userFilePath, string? userFileError)
+    /// <summary>category 값 = 시스템 정보 분류 Id (화면 이름은 <see cref="CategoryListText"/>).</summary>
+    public static readonly string[] KnownCategories = ["computer", "communication", "camera", "vision", "devtools"];
+
+    /// <summary>오류 문구용: computer(컴퓨터), communication(통신), ...</summary>
+    public static string CategoryListText =>
+        string.Join(", ", KnownCategories.Select(c => $"{c}({CategoryScreen(c)})"));
+
+    public static string CategoryScreen(string category) => category switch
+    {
+        "computer" => Loc.T("컴퓨터"),
+        "communication" => Loc.T("통신"),
+        "camera" => Loc.T("카메라 · 그랩보드"),
+        "vision" => Loc.T("이미지 라이브러리"),
+        "devtools" => Loc.T("개발 도구"),
+        _ => category,
+    };
+
+    private SoftwareCatalog(IReadOnlyList<SoftwareDefinition> definitions, string? userFilePath, IReadOnlyList<string> userFileProblems)
     {
         Definitions = definitions;
         UserFilePath = userFilePath;
-        UserFileError = userFileError;
+        UserFileProblems = userFileProblems;
     }
 
     public IReadOnlyList<SoftwareDefinition> Definitions { get; }
 
-    /// <summary>실제로 읽은 사용자 정의 파일 경로 (없으면 null).</summary>
+    /// <summary>실제로 읽은 사용자 정의 파일 경로 (없거나 JSON 형식이 깨져 못 읽었으면 null).</summary>
     public string? UserFilePath { get; }
 
-    public string? UserFileError { get; }
+    /// <summary>사용자 정의 파일의 문제 (JSON 형식 오류는 줄 번호 포함, 잘못된 항목·정규식). 화면 '요약'에 표시합니다.</summary>
+    public IReadOnlyList<string> UserFileProblems { get; }
 
     public static string ReadDefaultJson()
     {
@@ -102,13 +124,23 @@ public sealed class SoftwareCatalog
     {
         var merged = Parse(ReadDefaultJson());
         string? loadedUserFile = null;
-        string? error = null;
+        var problems = new List<string>();
 
         if (!string.IsNullOrEmpty(userFilePath) && File.Exists(userFilePath))
         {
+            string? json = null;
             try
             {
-                foreach (var custom in Parse(File.ReadAllText(userFilePath)))
+                json = File.ReadAllText(userFilePath);
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                problems.Add(Loc.F("파일을 읽지 못했습니다: {0}", ex.Message));
+            }
+
+            if (json is not null && ParseUser(json, problems) is { } customs)
+            {
+                foreach (var custom in customs)
                 {
                     merged.RemoveAll(d => string.Equals(d.Name, custom.Name, StringComparison.OrdinalIgnoreCase)
                                           && string.Equals(d.Category, custom.Category, StringComparison.OrdinalIgnoreCase));
@@ -118,14 +150,128 @@ public sealed class SoftwareCatalog
                 loadedUserFile = userFilePath;
                 log?.Debug(Loc.F("사용자 소프트웨어 정의 적용: {0}", userFilePath));
             }
-            catch (Exception ex) when (ex is JsonException or IOException or UnauthorizedAccessException)
+
+            foreach (var problem in problems)
             {
-                error = ex.Message;
-                log?.Warn(Loc.F("사용자 소프트웨어 정의 파일을 읽지 못해 기본값만 사용합니다: {0}", userFilePath), ex);
+                log?.Warn($"{UserFileName}: {problem}");
             }
         }
 
-        return new SoftwareCatalog(merged, loadedUserFile, error);
+        return new SoftwareCatalog(merged, loadedUserFile, problems);
+    }
+
+    /// <summary>
+    /// 사용자 정의 파일을 읽습니다. JSON 형식이 깨졌으면 null (줄 번호와 함께 문제 추가).
+    /// 항목 하나가 잘못되어도 나머지는 적용하고, 잘못된 정규식은 그 항목에 <see cref="SoftwareDefinition.Error"/> 로 남깁니다.
+    /// </summary>
+    public static List<SoftwareDefinition>? ParseUser(string json, List<string> problems)
+    {
+        JsonDocument document;
+        try
+        {
+            document = JsonDocument.Parse(json, new JsonDocumentOptions { CommentHandling = JsonCommentHandling.Skip, AllowTrailingCommas = true });
+        }
+        catch (JsonException ex)
+        {
+            problems.Add(DescribeJsonError(ex));
+            return null;
+        }
+
+        using (document)
+        {
+            var root = document.RootElement;
+            if (root.ValueKind != JsonValueKind.Object)
+            {
+                problems.Add(Loc.T("파일 전체를 { } 로 감싸야 합니다. 사용자 감지 목록은 적용하지 않았습니다."));
+                return null;
+            }
+
+            var lists = root.EnumerateObject().Where(p => p.Name.Equals("software", StringComparison.OrdinalIgnoreCase)).ToList();
+            if (lists.Count == 0)
+            {
+                problems.Add(Loc.T("\"software\": [ ... ] 목록이 없습니다."));
+            }
+            else if (lists.Count > 1)
+            {
+                problems.Add(Loc.F("\"software\" 목록이 {0}개 있습니다. 항목은 하나의 목록 [ ] 안에 쉼표로 이어서 넣으세요. (이번에는 모두 읽었습니다)", lists.Count));
+            }
+
+            var result = new List<SoftwareDefinition>();
+            var index = 0;
+            foreach (var list in lists)
+            {
+                if (list.Value.ValueKind != JsonValueKind.Array)
+                {
+                    problems.Add(Loc.T("\"software\" 는 [ ] 목록이어야 합니다."));
+                    continue;
+                }
+
+                foreach (var element in list.Value.EnumerateArray())
+                {
+                    index++;
+                    SoftwareDefinition? definition;
+                    try
+                    {
+                        definition = element.Deserialize<SoftwareDefinition>(JsonOptions);
+                    }
+                    catch (JsonException ex)
+                    {
+                        problems.Add(Loc.F("{0}번째 항목을 읽지 못했습니다: {1}", index, FirstSentence(ex.Message)));
+                        continue;
+                    }
+
+                    if (definition is null)
+                    {
+                        continue;
+                    }
+
+                    var label = string.IsNullOrWhiteSpace(definition.Name) ? Loc.F("{0}번째 항목", index) : definition.Name;
+                    if (string.IsNullOrWhiteSpace(definition.Name) || string.IsNullOrWhiteSpace(definition.Category))
+                    {
+                        problems.Add(Loc.F("{0}: category 와 name 은 꼭 적어야 합니다.", label));
+                        continue;
+                    }
+
+                    if (!KnownCategories.Contains(definition.Category, StringComparer.OrdinalIgnoreCase))
+                    {
+                        problems.Add(Loc.F("{0}: category '{1}' 는 {2} 중 하나여야 합니다.", label, definition.Category, CategoryListText));
+                        continue;
+                    }
+
+                    definition.Error = SoftwareDetector.ValidatePatterns(definition);
+                    if (definition.Error is not null)
+                    {
+                        problems.Add($"{label}: {definition.Error}");
+                    }
+
+                    result.Add(definition);
+                }
+            }
+
+            return result;
+        }
+    }
+
+    /// <summary>JSON 형식 오류를 줄 번호와 흔한 원인으로 설명합니다.</summary>
+    private static string DescribeJsonError(JsonException ex)
+    {
+        var message = ex.Message;
+        var hint = message.Contains("Expected either ','", StringComparison.Ordinal) || message.Contains("is invalid after a value", StringComparison.Ordinal)
+            ? Loc.T("앞 줄 끝에 쉼표(,)가 빠졌을 수 있습니다.")
+            : message.Contains("is an invalid escapable character", StringComparison.Ordinal)
+                ? Loc.T("경로·정규식의 \\ 는 \\\\ 처럼 두 번 써야 합니다.")
+                : message.Contains("is an invalid start of a property name", StringComparison.Ordinal)
+                    ? Loc.T("이름은 \"name\" 처럼 큰따옴표로 감싸야 합니다.")
+                    : FirstSentence(message);
+        return ex.LineNumber is { } line
+            ? Loc.F("{0}번째 줄 근처 JSON 형식 오류: {1} 사용자 감지 목록은 적용하지 않았습니다.", line + 1, hint)
+            : Loc.F("JSON 형식 오류: {0} 사용자 감지 목록은 적용하지 않았습니다.", hint);
+    }
+
+    private static string FirstSentence(string message)
+    {
+        var end = message.IndexOf(". ", StringComparison.Ordinal);
+        return end > 0 ? message[..(end + 1)] : message;
     }
 
     public IEnumerable<SoftwareDefinition> ForCategory(string category) =>
@@ -157,6 +303,9 @@ public sealed record SoftwareDetection(
     public string? Version =>
         Programs.Select(p => p.DisplayVersion).FirstOrDefault(v => !string.IsNullOrWhiteSpace(v))
         ?? FileVersions.FirstOrDefault();
+
+    /// <summary>정의가 잘못되어 감지하지 못한 이유 (잘못된 정규식 등).</summary>
+    public string? Error { get; init; }
 }
 
 public static partial class SoftwareDetector
@@ -180,6 +329,12 @@ public static partial class SoftwareDetector
     {
         getEnv ??= DefaultEnv;
         registryExists ??= DefaultRegistryExists;
+
+        // 잘못된 정규식은 분류 전체를 실패시키지 않고 이 항목만 '확인 필요'로
+        if ((definition.Error ?? ValidatePatterns(definition)) is { } error)
+        {
+            return new SoftwareDetection(definition, [], [], [], []) { Error = error };
+        }
 
         var include = definition.ProgramPatterns.Select(ToRegex).ToList();
         var exclude = definition.ExcludePatterns.Select(ToRegex).ToList();
@@ -226,10 +381,38 @@ public static partial class SoftwareDetector
         return new SoftwareDetection(definition, matchedPrograms, envVars, files, keys);
     }
 
+    /// <summary>
+    /// 기본 목록에 정의가 없는 분류(컴퓨터·통신)에 사용자가 넣은 항목을 "추가 감지 항목" 카드로 붙입니다.
+    /// 항목이 없으면 카드를 만들지 않습니다.
+    /// </summary>
+    public static void AddUserDefinedSection(CollectionContext context, string category, ProviderResult result)
+    {
+        var section = new InfoSection(Loc.T("추가 감지 항목"), note: Loc.F("감지 목록 파일(SunTool.software.json)에 category \"{0}\" 로 넣은 항목입니다.", category));
+        foreach (var definition in context.Software.ForCategory(category))
+        {
+            var items = ToItems(Detect(definition, context.InstalledPrograms));
+            section.Items.AddRange(items);
+            if (definition.Summary)
+            {
+                result.Summary.AddRange(items.Select(i => i with { Detail = null }));
+            }
+        }
+
+        if (section.Items.Count > 0)
+        {
+            result.Sections.Add(section);
+        }
+    }
+
     /// <summary>감지 결과를 화면 항목으로 바꿉니다 (같은 제품이 여러 버전 설치되면 각각 한 줄).</summary>
     public static List<InfoItem> ToItems(SoftwareDetection detection)
     {
         var definition = detection.Definition;
+        if (detection.Error is not null)
+        {
+            return [new InfoItem(definition.Name, Loc.T("감지 목록 오류"), InfoStatus.Warning, detection.Error)];
+        }
+
         var evidence = new List<string>();
         evidence.AddRange(detection.EnvVars.Select(e => $"{e.Name}={e.Value}"));
         evidence.AddRange(detection.Files.Select(f => $"{f.Path}{(f.Version is null ? string.Empty : $" (v{f.Version})")}"));
@@ -530,6 +713,34 @@ public static partial class SoftwareDetector
         || name.Equals("AppData", StringComparison.OrdinalIgnoreCase)
         || name.Equals("node_modules", StringComparison.OrdinalIgnoreCase)
         || name.Equals("System Volume Information", StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>정의의 정규식(programPatterns, excludePatterns, versionFromFileName)을 검사합니다. 문제가 없으면 null.</summary>
+    public static string? ValidatePatterns(SoftwareDefinition definition)
+    {
+        var patterns = definition.ProgramPatterns.Concat(definition.ExcludePatterns);
+        if (!string.IsNullOrEmpty(definition.VersionFromFileName))
+        {
+            patterns = patterns.Append(definition.VersionFromFileName);
+        }
+
+        foreach (var pattern in patterns)
+        {
+            try
+            {
+                _ = ToRegex(pattern);
+            }
+            catch (ArgumentException ex)
+            {
+                // "Invalid pattern '^Notepad++' at offset 10. Nested quantifier '+'." → "Nested quantifier '+'"
+                var reason = ex.Message;
+                var cut = reason.IndexOf(". ", StringComparison.Ordinal);
+                reason = (cut > 0 ? reason[(cut + 2)..] : reason).TrimEnd('.');
+                return Loc.F("정규식 '{0}' 이(가) 잘못되었습니다 ({1}). + . ( ) [ ] 같은 글자를 그대로 찾으려면 앞에 \\ 를 붙이세요 (JSON 에서는 \\\\+ 처럼 씁니다).", pattern, reason);
+            }
+        }
+
+        return null;
+    }
 
     private static Regex ToRegex(string pattern) =>
         new(pattern, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant, TimeSpan.FromSeconds(1));

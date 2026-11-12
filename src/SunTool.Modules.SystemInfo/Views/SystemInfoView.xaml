@@ -21,6 +21,22 @@
             <Setter Property="VerticalAlignment" Value="Center" />
         </Style>
 
+        <!-- 글자 링크처럼 보이는 버튼 (마우스를 올리면 밑줄) -->
+        <Style x:Key="LinkButton" TargetType="{x:Type Button}">
+            <Setter Property="Foreground" Value="{StaticResource AccentBrush}" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Focusable" Value="True" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type Button}">
+                        <Border Background="Transparent" Padding="4,2">
+                            <ContentPresenter />
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
         <!-- 상태 배지 -->
         <Style x:Key="Badge" TargetType="{x:Type Border}">
             <Setter Property="CornerRadius" Value="9" />
@@ -170,7 +186,27 @@
                         <DataTemplate DataType="{x:Type logic:InfoSection}">
                             <Border Style="{StaticResource Card}" Margin="0,0,0,12" Padding="16,12">
                                 <StackPanel>
-                                    <TextBlock Text="{Binding Title}" Style="{StaticResource SectionTitle}" Margin="0,0,0,4" />
+                                    <DockPanel Margin="0,0,0,4">
+                                        <Button DockPanel.Dock="Right" Style="{StaticResource LinkButton}" VerticalAlignment="Center"
+                                                Command="{Binding DataContext.OpenAdapterPropertiesCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                CommandParameter="{Binding AdapterName}"
+                                                ToolTip="{l:T 'Windows 의 이 랜카드 속성 창을 엽니다 (IP·서브넷·게이트웨이·DNS 수정). 관리자 확인 창이 뜰 수 있습니다.'}"
+                                                Visibility="{Binding HasAdapter, Converter={StaticResource BoolToVis}}">
+                                            <TextBlock>
+                                                <TextBlock.Style>
+                                                    <Style TargetType="{x:Type TextBlock}">
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType=Button}}" Value="True">
+                                                                <Setter Property="TextDecorations" Value="Underline" />
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </TextBlock.Style>
+                                                <Run Text="{l:T '어댑터 속성 열기'}" /><Run Text=" &#xE8A7;" FontFamily="{StaticResource IconFont}" FontSize="11" />
+                                            </TextBlock>
+                                        </Button>
+                                        <TextBlock Text="{Binding Title}" Style="{StaticResource SectionTitle}" />
+                                    </DockPanel>
                                     <ItemsControl ItemsSource="{Binding Items}" ItemTemplate="{StaticResource ItemTemplate}" />
                                     <TextBlock Text="{Binding Note}" Style="{StaticResource HintText}" TextWrapping="Wrap" Margin="0,8,0,0"
                                                Visibility="{Binding HasNote, Converter={StaticResource BoolToVis}}" />

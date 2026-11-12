@@ -84,3 +84,18 @@ public sealed class NotEmptyToVisibilityConverter : IValueConverter
     public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) =>
         Binding.DoNothing;
 }
+
+/// <summary>
+/// 숫자(int) 속성 ↔ 입력 칸 글자. 빈 칸이나 숫자가 아닌 글자는 저장하지 않고 이전 값을 그대로 둡니다
+/// (화면 전환으로 편집 콤보박스가 잠깐 비워질 때 WPF 바인딩 경고가 남지 않도록).
+/// </summary>
+public sealed class IntTextConverter : IValueConverter
+{
+    public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture) =>
+        value is IFormattable f ? f.ToString(null, CultureInfo.InvariantCulture) : value?.ToString();
+
+    public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture) =>
+        int.TryParse(value?.ToString()?.Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out var number)
+            ? number
+            : Binding.DoNothing;
+}

@@ -35,6 +35,7 @@
     <conv:InverseBooleanConverter x:Key="InverseBool" />
     <conv:EnumToVisibilityConverter x:Key="EnumToVis" />
     <conv:NotEmptyToVisibilityConverter x:Key="NotEmptyToVis" />
+    <conv:IntTextConverter x:Key="IntText" />
 
     <!-- ===== 기본 컨트롤 ===== -->
     <Style TargetType="{x:Type Window}">

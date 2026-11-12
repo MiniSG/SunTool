@@ -25,6 +25,7 @@ public sealed partial class CommunicationInfoProvider : ISystemInfoProvider
         cancellationToken.ThrowIfCancellationRequested();
         CollectSerialPorts(context, result);
         CollectOtherDevices(context, result);
+        SoftwareDetector.AddUserDefinedSection(context, Id, result);
         return result;
     }
 
@@ -60,7 +61,11 @@ public sealed partial class CommunicationInfoProvider : ISystemInfoProvider
                 wiredUp += isUp ? 1 : 0;
             }
 
-            var section = new InfoSection(Loc.F("네트워크 · {0}", adapter.Name));
+            var section = new InfoSection(Loc.F("네트워크 · {0}", adapter.Name))
+            {
+                AdapterName = adapter.Name,
+                Note = Loc.T("IP 를 바꾸려면 [어댑터 속성 열기] → 인터넷 프로토콜 버전 4(TCP/IPv4)를 더블클릭하세요. 바꾼 뒤 [새로고침]을 누르면 반영됩니다."),
+            };
             section.Items.Add(new InfoItem(Loc.T("어댑터"), adapter.Description, Detail: isVirtual ? Loc.T("가상 어댑터") : TypeName(adapter.NetworkInterfaceType)));
             section.Items.Add(new InfoItem(Loc.T("상태"), isUp ? Loc.T("연결됨") : Loc.T("연결 안 됨"), isUp ? InfoStatus.Ok : InfoStatus.None));
             if (isUp && adapter.Speed > 0)

@@ -194,6 +194,171 @@ public class SystemInfoTests
     }
 
     [Fact]
+    public void NetworkSections_CarryAdapterName_ForPropertiesButton()
+    {
+        // 네트워크 카드에만 [어댑터 속성 열기] 버튼용 연결 이름이 붙고, COM 포트 등 다른 카드에는 없어야 함
+        var result = new CommunicationInfoProvider().Collect(new CollectionContext(SoftwareCatalog.Load(null)), CancellationToken.None);
+        var network = result.Sections.Where(s => s.Title.StartsWith("네트워크 · ", StringComparison.Ordinal)).ToList();
+        Assert.NotEmpty(network);
+        Assert.All(network, s => Assert.Equal(s.Title["네트워크 · ".Length..], s.AdapterName));
+        Assert.All(result.Sections.Except(network), s => Assert.False(s.HasAdapter));
+    }
+
+    // ===== 사용자 감지 목록 파일 오류 표시
+
+    private const string TwoListsNoComma = """
+        {
+          // 주석
+          "software": [
+            { "category": "vision", "name": "예시", "programPatterns": [ "^MyCompany Vision" ] }
+          ]
+          "software": [
+            { "category": "devtools", "name": "Notepad++", "programPatterns": [ "^Notepad++" ], }
+          ]
+        }
+        """;
+
+    [Fact]
+    public void UserFile_MissingComma_ReportsLineAndHint()
+    {
+        var problems = new List<string>();
+        Assert.Null(SoftwareCatalog.ParseUser(TwoListsNoComma, problems));
+        var problem = Assert.Single(problems);
+        Assert.Contains("6번째 줄", problem);   // 두 번째 "software" 가 있는 줄
+        Assert.Contains("쉼표", problem);
+    }
+
+    [Fact]
+    public void UserFile_TwoLists_ReadsBoth_AndWarns_BadRegexMarksOnlyThatItem()
+    {
+        var json = TwoListsNoComma.Replace("  ]\n  \"software\"", "  ],\n  \"software\"").Replace("  ]\r\n  \"software\"", "  ],\r\n  \"software\"");
+        var problems = new List<string>();
+        var definitions = SoftwareCatalog.ParseUser(json, problems)!;
+
+        Assert.Equal(2, definitions.Count);
+        Assert.Contains(problems, p => p.Contains("\"software\" 목록이 2개"));
+        Assert.Contains(problems, p => p.StartsWith("Notepad++:") && p.Contains("^Notepad++") && p.Contains("Nested quantifier"));
+        Assert.Null(definitions[0].Error);
+
+        // 잘못된 정규식 항목은 예외 없이 '확인 필요' 한 줄로
+        var item = Assert.Single(SoftwareDetector.ToItems(SoftwareDetector.Detect(definitions[1], [])));
+        Assert.Equal(InfoStatus.Warning, item.Status);
+        Assert.Equal("Notepad++", item.Name);
+    }
+
+    [Fact]
+    public void UserFile_EscapedRegex_IsFine_AndMatchesNotepadPlusPlus()
+    {
+        const string json = """
+            { "software": [ { "category": "devtools", "name": "Notepad++", "programPatterns": [ "^Notepad\\+\\+" ] } ] }
+            """;
+        var problems = new List<string>();
+        var definition = Assert.Single(SoftwareCatalog.ParseUser(json, problems)!);
+        Assert.Empty(problems);
+        var program = new InstalledProgram("Notepad++ (64-bit x64)", "8.6.9", "Notepad++ Team", string.Empty, string.Empty);
+        var item = Assert.Single(SoftwareDetector.ToItems(SoftwareDetector.Detect(definition, [program], _ => null, _ => false)));
+        Assert.Equal(InfoStatus.Installed, item.Status);
+        Assert.Equal("8.6.9", item.Value);
+    }
+
+    [Fact]
+    public void UserFile_BadItems_AreSkipped_OthersApplied()
+    {
+        const string json = """
+            { "software": [
+                { "category": "tools", "name": "잘못된 분류" },
+                { "name": "분류 없음" },
+                { "category": "vision", "name": "정상" }
+            ] }
+            """;
+        var problems = new List<string>();
+        var definition = Assert.Single(SoftwareCatalog.ParseUser(json, problems)!);
+        Assert.Equal("정상", definition.Name);
+        Assert.Equal(2, problems.Count);
+    }
+
+    [Fact]
+    public void Load_BrokenUserFile_KeepsDefaults_AndExposesProblems()
+    {
+        var path = Path.Combine(Path.GetTempPath(), $"suntool-sw-{Guid.NewGuid():N}.json");
+        File.WriteAllText(path, TwoListsNoComma);
+        try
+        {
+            var catalog = SoftwareCatalog.Load(path);
+            Assert.Null(catalog.UserFilePath);
+            Assert.Single(catalog.UserFileProblems);
+            Assert.NotEmpty(catalog.ForCategory("vision"));
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    [Fact]
+    public void UserFile_ComputerAndCommunication_ShowAsAdditionalCards()
+    {
+        // 환경 변수 WINDIR 은 모든 Windows 에 있으므로 '설치됨'으로 감지되는 항목
+        const string json = """
+            { "software": [
+                { "category": "computer", "name": "사내 백신", "envVars": [ "WINDIR" ] },
+                { "category": "communication", "name": "USB-시리얼 드라이버", "envVars": [ "WINDIR" ], "summary": true }
+            ] }
+            """;
+        var path = Path.Combine(Path.GetTempPath(), $"suntool-sw-{Guid.NewGuid():N}.json");
+        File.WriteAllText(path, json);
+        try
+        {
+            var catalog = SoftwareCatalog.Load(path);
+            Assert.Empty(catalog.UserFileProblems);
+            var context = new CollectionContext(catalog);
+
+            var computer = new ComputerInfoProvider().Collect(context, CancellationToken.None);
+            var card = Assert.Single(computer.Sections, s => s.Title == "추가 감지 항목");
+            var item = Assert.Single(card.Items);
+            Assert.Equal("사내 백신", item.Name);
+            Assert.Equal(InfoStatus.Warning, item.Status);   // 설치 흔적(환경 변수)만 있고 버전은 모름
+
+            var comm = new CommunicationInfoProvider().Collect(context, CancellationToken.None);
+            Assert.Equal("USB-시리얼 드라이버", Assert.Single(Assert.Single(comm.Sections, s => s.Title == "추가 감지 항목").Items).Name);
+            Assert.Contains(comm.Summary, i => i.Name == "USB-시리얼 드라이버");
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+
+        // 사용자 항목이 없으면 카드도 없음
+        var plain = new ComputerInfoProvider().Collect(new CollectionContext(SoftwareCatalog.Load(null)), CancellationToken.None);
+        Assert.DoesNotContain(plain.Sections, s => s.Title == "추가 감지 항목");
+    }
+
+    [Fact]
+    public void UserFileTemplate_IsValid_AndMentionsAllCategories()
+    {
+        // [감지 목록 편집]으로 처음 만드는 파일 (주석 포함) 이 문제 없이 읽혀야 함
+        var template = (string)typeof(SunTool.Modules.SystemInfo.ViewModels.SystemInfoViewModel)
+            .GetField("UserFileTemplate", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static)!
+            .GetValue(null)!;
+        var problems = new List<string>();
+        var definition = Assert.Single(SoftwareCatalog.ParseUser(template, problems)!);
+        Assert.Empty(problems);
+        Assert.Equal("vision", definition.Category);
+        Assert.All(SoftwareCatalog.KnownCategories, c => Assert.Contains(c, template));
+    }
+
+    [Fact]
+    public void UserFile_UnknownCategory_ListsAllFiveScreens()
+    {
+        var problems = new List<string>();
+        SoftwareCatalog.ParseUser("""{ "software": [ { "category": "tools", "name": "X" } ] }""", problems);
+        var problem = Assert.Single(problems);
+        Assert.Contains("computer(컴퓨터)", problem);
+        Assert.Contains("communication(통신)", problem);
+        Assert.Contains("devtools(개발 도구)", problem);
+    }
+
+    [Fact]
     public void AppVersion_IsDateBased()
     {
         // 테스트 실행 파일이 아니라 같은 빌드 설정을 쓰는 어셈블리의 버전 형식 확인 (yyyy.M.d)
