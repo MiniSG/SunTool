@@ -3,6 +3,7 @@ using SunTool.Modules.BatchRename;
 using SunTool.Modules.Comm;
 using SunTool.Modules.EventLogViewer;
 using SunTool.Modules.FolderReplicator;
+using SunTool.Modules.MemoryWatch;
 using SunTool.Modules.SystemInfo;
 
 namespace SunTool.App;
@@ -21,5 +22,6 @@ internal static class ModuleAssemblies
         typeof(EventLogViewerModule).Assembly,
         typeof(SystemInfoModule).Assembly,
         typeof(CommModule).Assembly,
+        typeof(MemoryWatchModule).Assembly,
     ];
 }

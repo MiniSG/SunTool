@@ -104,8 +104,8 @@ pres.addSection({ title: "시작하기" });
   s.addText("SunTool 사용 매뉴얼", { placeholder: "title" });
   s.addText(
     [
-      { text: "폴더 구조 복제 · 파일 이름 일괄 변경 · 이벤트 로그 조회 · 시스템 정보 · 통신 테스트", options: { breakLine: true } },
-      { text: "v2026.11.11  ·  2026년 11월  ·  github.com/MiniSG/SunTool", options: { fontSize: 14 } },
+      { text: "폴더 구조 복제 · 파일 이름 일괄 변경 · 이벤트 로그 조회 · 시스템 정보 · 통신 테스트 · 메모리 감시", options: { breakLine: true } },
+      { text: "2026년 11월  ·  github.com/MiniSG/SunTool", options: { fontSize: 14 } },
     ],
     { placeholder: "body" }
   );
@@ -120,30 +120,31 @@ pres.addSection({ title: "시작하기" });
     [String.fromCharCode(0xE7BA), C.accent4, "이벤트 로그 조회", "위험·오류·경고 로그를 기간으로 모아 보고 이벤트 ID 뜻을 찾습니다."],
     [String.fromCharCode(0xE7F8), C.accent3, "시스템 정보", "PC 사양·COM 포트·카메라 SDK·HALCON·VS를 한 번에 보고 CSV로 저장합니다."],
     [String.fromCharCode(0xE839), C.accent5, "통신 테스트", "COM·TCP·UDP로 보내고 받으며 텍스트와 HEX로 확인합니다."],
-    ["\uE756", C.text1, "디버그 터미널", "F12 키로 실시간 로그를 보고 명령을 실행해 문제를 확인합니다."],
+    [String.fromCharCode(0xE9D9), C.accent4, "메모리 감시", "다른 프로그램의 커밋·커널 풀·핸들·GDI를 기록해 계속 늘어나는지 봅니다."],
   ];
+  items.push([String.fromCharCode(0xE756), C.text1, "디버그 터미널", "F12 키로 실시간 로그를 보고 명령을 실행해 문제를 확인합니다."]);
   items.forEach(([g, color, t, d], i) => {
-    const x = 0.6 + i * 2.06;
-    card(s, x, 1.75, 1.92, 3.4);
-    iconCircle(s, x + 0.2, 2.05, 0.7, g, color);
-    s.addText(t, { x: x + 0.2, y: 2.85, w: 1.6, h: 0.75, valign: "bottom", fontSize: 16, bold: true, color: C.text1, margin: 0, isTextBox: true, objectName: nm("cardTitle") });
-    s.addText(d, { x: x + 0.2, y: 3.7, w: 1.6, h: 1.4, fontSize: 13, color: C.text2, valign: "top", margin: 0, isTextBox: true, objectName: nm("cardBody") });
+    const col = i % 4, row = Math.floor(i / 4);
+    const x = 0.6 + col * 3.07, y = 1.6 + row * 2.45;
+    card(s, x, y, 2.9, 2.25);
+    iconCircle(s, x + 0.25, y + 0.25, 0.6, g, color);
+    s.addText(t, { x: x + 1.0, y: y + 0.25, w: 1.8, h: 0.6, valign: "middle", fontSize: 16, bold: true, color: C.text1, margin: 0, isTextBox: true, objectName: nm("cardTitle") });
+    s.addText(d, { x: x + 0.25, y: y + 1.0, w: 2.45, h: 1.15, fontSize: 13, color: C.text2, valign: "top", margin: 0, isTextBox: true, objectName: nm("cardBody") });
   });
-  const facts = [
-    ["설치 없이 실행", "SunTool.exe 파일 하나 (.NET 포함)"],
-    ["지원 환경", "Windows 10/11 64비트 · 한국어/English"],
-    ["포터블 저장", "설정·로그를 exe 옆 폴더에 저장"],
-  ];
-  facts.forEach(([t, d], i) => {
-    const x = 0.6 + i * 4.1;
-    s.addText(
-      [
-        { text: t, options: { bold: true, fontSize: 16, color: C.accent1, breakLine: true } },
-        { text: d, options: { fontSize: 14, color: C.text2 } },
-      ],
-      { x: x + 0.35, y: 5.5, w: 3.5, h: 0.85, margin: 0, valign: "top", isTextBox: true, objectName: nm("fact") }
-    );
-  });
+  // 마지막 칸: 실행 정보
+  const fx = 0.6 + 3 * 3.07, fy = 1.6 + 2.45;
+  card(s, fx, fy, 2.9, 2.25, "EEF3FE");
+  s.addText(
+    [
+      { text: "설치 없이 실행", options: { bold: true, fontSize: 14, color: C.accent1, breakLine: true } },
+      { text: "SunTool.exe 하나 (.NET 포함)", options: { fontSize: 13, color: C.text2, breakLine: true } },
+      { text: "Windows 10/11 64비트", options: { bold: true, fontSize: 14, color: C.accent1, breakLine: true } },
+      { text: "한국어 / English", options: { fontSize: 13, color: C.text2, breakLine: true } },
+      { text: "포터블 저장", options: { bold: true, fontSize: 14, color: C.accent1, breakLine: true } },
+      { text: "설정·로그를 exe 옆 폴더에", options: { fontSize: 13, color: C.text2 } },
+    ],
+    { x: fx + 0.25, y: fy + 0.15, w: 2.5, h: 1.95, valign: "middle", margin: 0, isTextBox: true, objectName: "facts" }
+  );
 }
 
 // ===== 3. 시작하기 =====
@@ -769,6 +770,97 @@ pres.addSection({ title: "통신 테스트" });
   );
 }
 
+// ===== 메모리 감시 — 화면과 사용 순서 =====
+pres.addSection({ title: "메모리 감시" });
+{
+  const s = contentSlide("메모리 감시", "기능 6 · 메모리 감시", "다른 프로그램의 메모리가 계속 늘어나는지");
+  const mark = screenshot(s, "img_memwatch-0.png", 0.6, 1.55, 8.0, 1036, 676, "메모리 감시 화면: VisionInspector 를 3시간 감시한 그래프 6개. 커밋과 GDI 는 증가 추세, 핸들·커널 풀·스레드는 안정, 가상 크기는 64비트라 판정하지 않음");
+  mark(136, 26, 1);
+  mark(948, 26, 2);
+  mark(560, 60, 3);
+  mark(268, 98, 4);
+  mark(300, 250, 5);
+  mark(232, 147, 6);
+  mark(252, 358, 7);
+  const steps = [
+    ["간격·워밍업", "화면 ① · 1초~1분 · 처음 N분 제외"],
+    ["[감시 시작]", "화면 ② · 목록에서 고른 뒤 누름"],
+    ["대상과 CSV", "화면 ③ · logs 폴더에 자동 저장"],
+    ["시스템 전체 커밋", "화면 ④ · 컴퓨터 전체 합계·한도 (참고)"],
+    ["그래프 6개", "화면 ⑤ · 현재·최고·증가량"],
+    ["판정 배지", "화면 ⑥ · 판정 보류 · 안정 · 증가 추세"],
+    ["근거", "화면 ⑦ · 시간당 증가량과 한계 시점"],
+  ];
+  steps.forEach(([t, d], i) => step(s, 8.95, 1.55 + i * 0.8, 3.8, i + 1, t, d));
+}
+
+// ===== 메모리 감시 — 판정 읽는 법 =====
+{
+  const s = contentSlide("메모리 감시", "기능 6 · 메모리 감시", "참고용 판정은 이렇게 읽습니다");
+
+  // 위: 바닥선 비교 그래프 2개 (정상 / 누수 의심)
+  const labels = Array.from({ length: 25 }, (_, i) => (i % 6 === 0 ? `${i * 5}분` : ""));
+  const tooth = (i) => (i % 5) * 9;
+  const normal = labels.map((_, i) => 400 + tooth(i));
+  const leak = labels.map((_, i) => 400 + tooth(i) + i * 6);
+  const floorOf = (arr) => arr.map((v, i) => (i % 5 === 0 ? v : null));
+  const chartOpts = (title, x) => ({
+    x, y: 1.55, w: 5.95, h: 2.55,
+    showTitle: true, title, titleFontSize: 13, titleColor: "1F2430", titleFontFace: "+mn-lt",
+    chartColors: ["9AA3AF", "D1242F"], lineSize: 2, lineDataSymbol: "none",
+    showLegend: true, legendPos: "b", legendFontSize: 11, legendFontFace: "+mn-lt", legendColor: "4B5563",
+    catAxisLabelColor: "6B7280", valAxisLabelColor: "6B7280", catAxisLabelFontSize: 10, valAxisLabelFontSize: 10,
+    catAxisLabelFontFace: "+mn-lt", valAxisLabelFontFace: "+mn-lt",
+    valAxisMinVal: 380, valAxisMaxVal: 600, valAxisLabelFormatCode: "0\" MB\"",
+    valGridLine: { color: "E5E7EB", size: 0.75 }, catGridLine: { style: "none" },
+    displayBlanksAs: "span",
+  });
+  s.addChart(pres.charts.LINE, [
+    { name: "커밋 (톱니 모양)", labels, values: normal },
+    { name: "바닥선 (구간별 최저값)", labels, values: floorOf(normal) },
+  ], { ...chartOpts("안정: 오르내려도 바닥선이 평평", 0.6), objectName: "chartStable" });
+  s.addChart(pres.charts.LINE, [
+    { name: "커밋 (톱니 모양)", labels, values: leak },
+    { name: "바닥선 (구간별 최저값)", labels, values: floorOf(leak) },
+  ], { ...chartOpts("증가 추세: 바닥선이 꾸준히 올라감", 6.8), objectName: "chartRising" });
+
+  // 아래 왼쪽: 판정 뜻
+  const verdicts = [
+    ["판정 보류", "EEF0F3", "4B5563", "관찰 시간이 부족하거나 아직 분명하지 않음. 계속 감시하세요."],
+    ["안정", "E6F4EA", "1A7F37", "워밍업 뒤 바닥선이 평평합니다."],
+    ["증가 추세", "FFF4E5", "B7791F", "바닥선이 꾸준히 오릅니다. 시간당 증가량과 한계까지 남은 시간을 보세요."],
+  ];
+  verdicts.forEach(([name, fill, color, desc], i) => {
+    const y = 4.35 + i * 0.62;
+    s.addShape(pres.shapes.ROUNDED_RECTANGLE, { x: 0.6, y: y + 0.08, w: 1.35, h: 0.38, rectRadius: 0.19, fill: { color: fill }, line: { color: fill }, objectName: nm("verdictBadge") });
+    s.addText(name, { x: 0.6, y: y + 0.08, w: 1.35, h: 0.38, fontSize: 13, bold: true, color, align: "center", valign: "middle", margin: 0, isTextBox: true, objectName: nm("verdictName") });
+    s.addText(desc, { x: 2.1, y, w: 4.35, h: 0.55, fontSize: 13, color: C.text2, valign: "middle", margin: 0, isTextBox: true, objectName: nm("verdictDesc") });
+  });
+
+  // 아래 오른쪽: 값별 믿을 만한 정도
+  const h = { bold: true, color: C.background1, fill: { color: C.text1 }, fontSize: 13 };
+  const k = { bold: true, color: C.text1, fontSize: 12 };
+  const d = { color: C.text2, fontSize: 12 };
+  const rows = [
+    ["핸들·GDI·USER·스레드", "높음", "10분 이상"],
+    ["커밋 (Private Bytes)", "중간~높음 (같은 작업 반복)", "30분, 1~2시간 권장"],
+    ["커널 풀 (페이징·NP)", "중간 (드라이버·SDK 쪽)", "30분 이상"],
+    ["가상 크기", "32비트 프로그램만 판정", "30분 이상"],
+    ["시스템 전체 커밋", "판정하지 않음", "참고로 표시"],
+  ];
+  s.addTable(
+    [[{ text: "값", options: h }, { text: "믿을 만한 정도", options: h }, { text: "필요한 관찰", options: h }], ...rows.map(([a, b, c]) => [{ text: a, options: k }, { text: b, options: d }, { text: c, options: d }])],
+    { x: 6.8, y: 4.35, w: 5.95, colW: [1.95, 2.2, 1.8], rowH: 0.36, border: { type: "solid", pt: 0.75, color: "D9DDE3" }, valign: "middle", margin: [0.03, 0.08, 0.03, 0.08], objectName: "reliabilityTable" }
+  );
+  s.addText(
+    [
+      { text: "원인 위치는 알려 주지 않습니다  ", options: { bold: true, color: C.accent1 } },
+      { text: "증상만 봅니다. 어디서 새는지는 VMMap · UMDH · PerfView · dotMemory 같은 도구로 확인하세요.", options: { color: C.text2 } },
+    ],
+    { x: 0.6, y: 6.3, w: 5.85, h: 0.65, fontSize: 12, valign: "top", margin: 0, isTextBox: true, objectName: "causeNote" }
+  );
+}
+
 // ===== 12. 디버그 터미널 =====
 pres.addSection({ title: "디버그 터미널" });
 {
@@ -825,7 +917,7 @@ pres.addSection({ title: "빌드 환경" });
     ["편집기 (선택)", "Visual Studio 2022 또는 VS Code"],
     ["UI / 패턴", "WPF + MVVM Toolkit 8.2.2"],
     ["기타 패키지", "MS DI · EventLog · Management · Ports 8.0"],
-    ["테스트", "xUnit (단위 테스트 147개)"],
+    ["테스트", "xUnit (단위 테스트 170개)"],
     ["버전 번호", "빌드한 날짜로 자동 (예: 2026.11.09)"],
     ["인터넷", "첫 빌드 때 NuGet 패키지 복원"],
   ];
@@ -871,14 +963,15 @@ pres.addSection({ title: "빌드 환경" });
     ["Modules.EventLogViewer", "기능 3 이벤트 로그 조회"],
     ["Modules.SystemInfo", "기능 4 시스템 정보"],
     ["Modules.Comm", "기능 5 통신 테스트"],
+    ["Modules.MemoryWatch", "기능 6 메모리 감시"],
     ["SunTool.Tests", "규칙·충돌·감지·통신 테스트"],
   ];
   s.addText("src / tests 구성", { x: 0.6, y: 1.55, w: 6, h: 0.42, fontSize: 18, bold: true, color: C.text1, margin: 0, isTextBox: true, objectName: "projHead" });
   projects.forEach(([p, d], i) => {
-    const y = 2.05 + i * 0.54;
-    card(s, 0.6, y, 6.1, 0.46);
-    s.addText(p, { x: 0.85, y, w: 2.85, h: 0.46, fontFace: MONO, fontSize: 14, bold: true, color: i >= 3 && i <= 7 ? C.accent1 : C.text1, valign: "middle", margin: 0, isTextBox: true, objectName: nm("projName") });
-    s.addText(d, { x: 3.75, y, w: 2.85, h: 0.46, fontSize: 14, color: C.text2, valign: "middle", margin: 0, isTextBox: true, objectName: nm("projDesc") });
+    const y = 2.05 + i * 0.48;
+    card(s, 0.6, y, 6.1, 0.42);
+    s.addText(p, { x: 0.85, y, w: 2.85, h: 0.42, fontFace: MONO, fontSize: 13, bold: true, color: i >= 3 && i <= 8 ? C.accent1 : C.text1, valign: "middle", margin: 0, isTextBox: true, objectName: nm("projName") });
+    s.addText(d, { x: 3.75, y, w: 2.85, h: 0.42, fontSize: 14, color: C.text2, valign: "middle", margin: 0, isTextBox: true, objectName: nm("projDesc") });
   });
 
   s.addText("새 기능 추가 4단계", { x: 7.15, y: 1.55, w: 5.6, h: 0.42, fontSize: 18, bold: true, color: C.text1, margin: 0, isTextBox: true, objectName: "extHead" });
