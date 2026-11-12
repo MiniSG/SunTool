@@ -568,7 +568,7 @@ pres.addSection({ title: "시스템 정보" });
   const d = { color: C.text2, fontSize: 13 };
   const rows = [
     ["컴퓨터", "제조사·모델·시리얼, OS·빌드, 메인보드·BIOS, CPU, 메모리, 디스크, 그래픽"],
-    ["통신", "LAN 어댑터(속도·IP·MAC·점보 패킷), 추가된 COM 포트(USB·PCI 카드 구분)"],
+    ["통신", "LAN 어댑터(속도·IP·MAC·점보 패킷), [어댑터 속성 열기]로 IP 수정, 추가된 COM 포트"],
     ["카메라 · 그랩보드", "연결된 카메라·그랩보드 장치, Basler pylon · DALSA Sapera 등 SDK 버전, GenTL"],
     ["이미지 라이브러리", "HALCON 버전, MIL · VisionPro · OpenCV 등 설치 여부와 버전"],
     ["개발 도구", "Visual Studio 에디션·버전, .NET SDK·런타임, VC++ 재배포, Git·Python 등"],
@@ -596,9 +596,70 @@ pres.addSection({ title: "시스템 정보" });
       { text: "F12 터미널에서", options: { color: C.text2, breakLine: true } },
       { text: "programs pylon", options: { fontFace: MONO, color: C.accent1, bold: true, breakLine: true } },
       { text: "[감지 목록 편집]으로 추가", options: { bold: true, color: C.text1, breakLine: true } },
-      { text: "exe 옆 SunTool.software.json 에 이름 패턴·환경 변수·DLL 경로를 넣으면 다음 수집부터 반영됩니다.", options: { color: C.text2 } },
+      { text: "exe 옆 SunTool.software.json 에 이름 패턴·환경 변수·DLL 경로를 넣으면 다음 수집부터 반영됩니다 (작성법은 다음 장).", options: { color: C.text2 } },
     ],
     { x: 8.95, y: 2.4, w: 3.55, h: 4.3, fontSize: 14, valign: "top", margin: 0, paraSpaceAfter: 5, isTextBox: true, objectName: "detectBody" }
+  );
+}
+
+// ===== 시스템 정보 — 감지 목록 파일 작성법 · IP 수정 =====
+{
+  const s = contentSlide("시스템 정보", "기능 4 · 시스템 정보", "감지 목록 파일 작성법과 IP 수정");
+
+  // 왼쪽 위: category 표
+  const h = { bold: true, color: C.background1, fill: { color: C.text1 }, fontSize: 14 };
+  const m = { fontFace: MONO, color: C.text1, fontSize: 13 };
+  const d = { color: C.text2, fontSize: 13 };
+  const cats = [
+    ["computer", "컴퓨터 · '추가 감지 항목' 카드"],
+    ["communication", "통신 · '추가 감지 항목' 카드"],
+    ["camera", "카메라 · 그랩보드"],
+    ["vision", "이미지 라이브러리"],
+    ["devtools", "개발 도구 · '기타 개발 도구' 카드"],
+  ];
+  s.addText("category = 표시할 화면", { x: 0.6, y: 1.55, w: 5.6, h: 0.4, fontSize: 16, bold: true, color: C.text1, margin: 0, isTextBox: true, objectName: "catHead" });
+  s.addTable(
+    [[{ text: "category", options: h }, { text: "표시되는 화면", options: h }], ...cats.map(([a, b]) => [{ text: a, options: m }, { text: b, options: d }])],
+    { x: 0.6, y: 2.0, w: 5.6, colW: [1.95, 3.65], rowH: 0.36, border: { type: "solid", pt: 0.75, color: "D9DDE3" }, valign: "middle", margin: [0.03, 0.1, 0.03, 0.1], objectName: "catTable" }
+  );
+
+  // 오른쪽 위: 예시 JSON
+  s.addShape(pres.shapes.ROUNDED_RECTANGLE, { x: 6.55, y: 1.55, w: 6.2, h: 2.65, rectRadius: 0.12, fill: { color: "0D1117" }, line: { color: "0D1117" }, objectName: "swCodeBg" });
+  const code = [
+    ["{", "E6EDF3"],
+    ["  \"software\": [", "E6EDF3"],
+    ["    { \"category\": \"vision\", \"name\": \"사내 비전 라이브러리\",", "E6EDF3"],
+    ["      \"programPatterns\": [ \"^MyCompany Vision\" ] },", "E6EDF3"],
+    ["    { \"category\": \"devtools\", \"name\": \"Notepad++\",", "E6EDF3"],
+    ["      \"programPatterns\": [ \"^Notepad\\\\+\\\\+\" ] }", "F2A93B"],
+    ["  ]", "E6EDF3"],
+    ["}", "E6EDF3"],
+  ];
+  s.addText(
+    code.map(([t, col], i) => ({ text: t, options: { color: col, breakLine: i < code.length - 1 } })),
+    { x: 6.8, y: 1.7, w: 5.8, h: 2.4, fontFace: MONO, fontSize: 12, valign: "middle", margin: 0, isTextBox: true, objectName: "swCode" }
+  );
+
+  // 가운데: 주의할 점
+  s.addText(
+    [
+      { text: "\"software\" 목록은 하나만, 항목은 { } 를 쉼표로 이어서 넣습니다.", options: { bullet: true, breakLine: true } },
+      { text: "정규식에서 + . ( ) 를 글자 그대로 찾으려면 \\ 를 붙이고, JSON 에서는 \\\\ 로 두 번 씁니다.", options: { bullet: true, breakLine: true } },
+      { text: "잘못 쓰면 요약 화면 맨 위에 줄 번호와 이유가 나옵니다. 잘못된 항목만 '확인 필요'로 표시됩니다.", options: { bullet: true } },
+    ],
+    { x: 0.6, y: 4.45, w: 12.15, h: 1.0, fontSize: 14, color: C.text2, valign: "top", margin: 0, paraSpaceAfter: 3, isTextBox: true, objectName: "swTips" }
+  );
+
+  // 아래 왼쪽: 오류 표시 화면 / 아래 오른쪽: 어댑터 속성
+  screenshot(s, "img_swerror-0.png", 0.6, 5.55, 6.3, 1002, 182, "요약 화면 맨 위의 감지 목록 파일 확인 필요 카드: software 목록이 2개, Notepad++ 정규식 오류가 표시됨");
+  card(s, 7.25, 5.55, 5.5, 1.2, "EEF3FE");
+  s.addImage({ path: IMG("img_adapter-0.png"), x: 7.45, y: 5.7, w: 5.1, h: (5.1 * 48) / 986, altText: "네트워크 카드 제목 오른쪽의 어댑터 속성 열기 링크", objectName: "adapterShot" });
+  s.addText(
+    [
+      { text: "IP 바꾸기  ", options: { bold: true, color: C.accent1 } },
+      { text: "통신 화면의 [어댑터 속성 열기] → TCP/IPv4 더블클릭. 관리자 확인 창이 뜰 수 있고, 바꾼 뒤 [새로고침].", options: { color: C.text1 } },
+    ],
+    { x: 7.45, y: 6.05, w: 5.15, h: 0.65, fontSize: 13, valign: "top", margin: 0, isTextBox: true, objectName: "adapterNote" }
   );
 }
 
@@ -764,7 +825,7 @@ pres.addSection({ title: "빌드 환경" });
     ["편집기 (선택)", "Visual Studio 2022 또는 VS Code"],
     ["UI / 패턴", "WPF + MVVM Toolkit 8.2.2"],
     ["기타 패키지", "MS DI · EventLog · Management · Ports 8.0"],
-    ["테스트", "xUnit (단위 테스트 138개)"],
+    ["테스트", "xUnit (단위 테스트 147개)"],
     ["버전 번호", "빌드한 날짜로 자동 (예: 2026.11.09)"],
     ["인터넷", "첫 빌드 때 NuGet 패키지 복원"],
   ];
