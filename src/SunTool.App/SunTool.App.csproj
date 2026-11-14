@@ -32,6 +32,7 @@
     <ProjectReference Include="..\SunTool.Modules.SystemInfo\SunTool.Modules.SystemInfo.csproj" />
     <ProjectReference Include="..\SunTool.Modules.Comm\SunTool.Modules.Comm.csproj" />
     <ProjectReference Include="..\SunTool.Modules.MemoryWatch\SunTool.Modules.MemoryWatch.csproj" />
+    <ProjectReference Include="..\SunTool.Modules.NetScan\SunTool.Modules.NetScan.csproj" />
   </ItemGroup>
 
 </Project>
