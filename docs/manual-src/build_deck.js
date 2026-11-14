@@ -898,6 +898,73 @@ pres.addSection({ title: "장치 검색" });
   );
 }
 
+// ===== 장치 검색 — IP 대역(CIDR) 쉽게 이해하기 =====
+{
+  const s = contentSlide("장치 검색", "기능 7 · 장치 검색", "IP 대역(CIDR) 쉽게 이해하기");
+
+  // IP 4칸 그림: 앞 3칸 고정 + 마지막 칸만 바뀜
+  const octets = [["192", true], ["168", true], ["0", true], ["0~255", false]];
+  const bx0 = 1.9, bw = 1.7, pitch = 2.25, by = 1.88, bh = 0.92;
+  octets.forEach(([v, fixed], i) => {
+    const x = bx0 + i * pitch;
+    s.addShape(pres.shapes.ROUNDED_RECTANGLE, { x, y: by, w: bw, h: bh, rectRadius: 0.1,
+      fill: { color: fixed ? C.accent1 : C.background1 }, line: { color: C.accent1, width: fixed ? 0 : 2.25 }, objectName: nm("octet") });
+    s.addText(v, { x, y: by, w: bw, h: bh, align: "center", valign: "middle", fontSize: v.length > 3 ? 20 : 26, bold: true,
+      color: fixed ? C.background1 : C.accent1, margin: 0, isTextBox: true, objectName: nm("octetVal") });
+    s.addText(fixed ? "고정" : "장치마다 바뀜", { x, y: by + bh + 0.02, w: bw, h: 0.28, align: "center",
+      fontSize: 12, bold: !fixed, color: fixed ? C.accent6 : C.accent1, margin: 0, isTextBox: true, objectName: nm("octetLbl") });
+    if (i < 3) {
+      s.addText(".", { x: x + bw, y: by - 0.12, w: pitch - bw, h: bh, align: "center", valign: "middle", fontSize: 30, bold: true, color: C.text2, margin: 0, isTextBox: true, objectName: nm("dot") });
+    }
+  });
+  // 위쪽 구분 라벨
+  s.addText("앞 24비트 = 앞 3칸 (네트워크, 고정)", { x: bx0, y: 1.55, w: bw * 3 + pitch - bw, h: 0.35, align: "center", fontSize: 13, bold: true, color: C.accent1, margin: 0, isTextBox: true, objectName: "netLabel" });
+  s.addText("마지막 1칸 (0~255)", { x: bx0 + 3 * pitch, y: 1.55, w: bw, h: 0.35, align: "center", fontSize: 13, bold: true, color: C.text2, margin: 0, isTextBox: true, objectName: "hostLabel" });
+  s.addText("/24 는 \"앞에서부터 24비트(= 앞 3칸)를 고정한다\"는 뜻입니다.", { x: 0.6, y: 3.26, w: 12.1, h: 0.35, align: "center", fontSize: 14, color: C.text2, margin: 0, isTextBox: true, objectName: "cidrMeaning" });
+
+  // 결과 범위 카드
+  card(s, 0.6, 3.72, 12.15, 0.78, "EEF3FE");
+  s.addText(
+    [
+      { text: "192.168.0.0/24", options: { fontFace: MONO, bold: true, color: C.accent1, fontSize: 16 } },
+      { text: "  =  ", options: { color: C.text2 } },
+      { text: "192.168.0.0 ~ 192.168.0.255", options: { fontFace: MONO, bold: true, color: C.text1, fontSize: 15 } },
+      { text: "   주소 256개, 실제 장치는 보통 .1 ~ .254", options: { color: C.text2, fontSize: 14 } },
+    ],
+    { x: 0.85, y: 3.72, w: 11.65, h: 0.78, valign: "middle", margin: 0, isTextBox: true, objectName: "rangeResult" }
+  );
+
+  // 왼쪽 아래: /24 vs /16 비교 표
+  const h = { bold: true, color: C.background1, fill: { color: C.text1 }, fontSize: 13 };
+  const mono = { fontFace: MONO, bold: true, color: C.accent1, fontSize: 14 };
+  const cell = { color: C.text1, fontSize: 13 };
+  const sub = { color: C.text2, fontSize: 13 };
+  s.addTable(
+    [
+      [{ text: "표기", options: h }, { text: "바뀌는 칸", options: h }, { text: "주소 수", options: h }, { text: "쓰임", options: h }],
+      [{ text: "/24", options: mono }, { text: "끝 1칸 (0~255)", options: sub }, { text: "256개", options: cell }, { text: "집·사무실 대부분", options: sub }],
+      [{ text: "/16", options: mono }, { text: "끝 2칸", options: sub }, { text: "65,536개", options: cell }, { text: "큰 네트워크 (모듈 최대)", options: sub }],
+    ],
+    { x: 0.6, y: 4.6, w: 7.0, colW: [1.0, 2.1, 1.4, 2.5], rowH: 0.44, border: { type: "solid", pt: 0.75, color: "D9DDE3" }, valign: "middle", margin: [0.03, 0.1, 0.03, 0.1], objectName: "cidrTable" }
+  );
+  s.addText("뒤 숫자가 작을수록 범위가 넓어집니다. 이 모듈은 최대 /16 까지만 됩니다.", { x: 0.6, y: 6.05, w: 7.0, h: 0.6, fontSize: 13, italic: true, color: C.accent1, valign: "top", margin: 0, isTextBox: true, objectName: "cidrNote" });
+
+  // 오른쪽 아래: 실전 팁
+  card(s, 7.85, 4.6, 4.9, 2.05, "FFF6E5");
+  iconCircle(s, 8.15, 4.9, 0.55, "", C.accent5, C.background1);
+  s.addText("실전 팁: 우리 집·사무실 검사하기", { x: 8.9, y: 4.88, w: 3.7, h: 0.6, valign: "middle", fontSize: 15, bold: true, color: C.text1, margin: 0, isTextBox: true, objectName: "tipHead" });
+  s.addText(
+    [
+      { text: "내 PC 주소가 ", options: {} },
+      { text: "192.168.0.15", options: { fontFace: MONO, bold: true, color: C.accent1 } },
+      { text: " 라면, 마지막 칸만 0 으로 바꾼 ", options: {} },
+      { text: "192.168.0.0/24", options: { fontFace: MONO, bold: true, color: C.accent1 } },
+      { text: " 를 넣으면 같은 네트워크 전체(.0~.255)를 검사합니다.\n내 IP 확인: [시스템 정보] > 통신, 또는 명령 프롬프트에서 ipconfig.", options: {} },
+    ],
+    { x: 8.15, y: 5.5, w: 4.4, h: 1.05, fontSize: 13, color: C.text2, valign: "top", margin: 0, isTextBox: true, objectName: "tipBody" }
+  );
+}
+
 // ===== 12. 디버그 터미널 =====
 pres.addSection({ title: "디버그 터미널" });
 {
