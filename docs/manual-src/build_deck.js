@@ -104,7 +104,7 @@ pres.addSection({ title: "시작하기" });
   s.addText("SunTool 사용 매뉴얼", { placeholder: "title" });
   s.addText(
     [
-      { text: "폴더 구조 복제 · 파일 이름 일괄 변경 · 이벤트 로그 조회 · 시스템 정보 · 통신 테스트 · 메모리 감시", options: { breakLine: true } },
+      { text: "폴더 구조 복제 · 파일 이름 일괄 변경 · 이벤트 로그 조회 · 시스템 정보 · 통신 테스트 · 메모리 감시 · 장치 검색", options: { breakLine: true } },
       { text: "2026년 11월  ·  github.com/MiniSG/SunTool", options: { fontSize: 14 } },
     ],
     { placeholder: "body" }
@@ -122,6 +122,7 @@ pres.addSection({ title: "시작하기" });
     [String.fromCharCode(0xE839), C.accent5, "통신 테스트", "COM·TCP·UDP로 보내고 받으며 텍스트와 HEX로 확인합니다."],
     [String.fromCharCode(0xE9D9), C.accent4, "메모리 감시", "다른 프로그램의 커밋·커널 풀·핸들·GDI를 기록해 계속 늘어나는지 봅니다."],
   ];
+  items.push([String.fromCharCode(0xE968), C.accent1, "장치 검색", "핑으로 같은 네트워크의 살아 있는 장치를 IP·MAC·이름과 함께 찾습니다."]);
   items.push([String.fromCharCode(0xE756), C.text1, "디버그 터미널", "F12 키로 실시간 로그를 보고 명령을 실행해 문제를 확인합니다."]);
   items.forEach(([g, color, t, d], i) => {
     const col = i % 4, row = Math.floor(i / 4);
@@ -131,20 +132,6 @@ pres.addSection({ title: "시작하기" });
     s.addText(t, { x: x + 1.0, y: y + 0.25, w: 1.8, h: 0.6, valign: "middle", fontSize: 16, bold: true, color: C.text1, margin: 0, isTextBox: true, objectName: nm("cardTitle") });
     s.addText(d, { x: x + 0.25, y: y + 1.0, w: 2.45, h: 1.15, fontSize: 13, color: C.text2, valign: "top", margin: 0, isTextBox: true, objectName: nm("cardBody") });
   });
-  // 마지막 칸: 실행 정보
-  const fx = 0.6 + 3 * 3.07, fy = 1.6 + 2.45;
-  card(s, fx, fy, 2.9, 2.25, "EEF3FE");
-  s.addText(
-    [
-      { text: "설치 없이 실행", options: { bold: true, fontSize: 14, color: C.accent1, breakLine: true } },
-      { text: "SunTool.exe 하나 (.NET 포함)", options: { fontSize: 13, color: C.text2, breakLine: true } },
-      { text: "Windows 10/11 64비트", options: { bold: true, fontSize: 14, color: C.accent1, breakLine: true } },
-      { text: "한국어 / English", options: { fontSize: 13, color: C.text2, breakLine: true } },
-      { text: "포터블 저장", options: { bold: true, fontSize: 14, color: C.accent1, breakLine: true } },
-      { text: "설정·로그를 exe 옆 폴더에", options: { fontSize: 13, color: C.text2 } },
-    ],
-    { x: fx + 0.25, y: fy + 0.15, w: 2.5, h: 1.95, valign: "middle", margin: 0, isTextBox: true, objectName: "facts" }
-  );
 }
 
 // ===== 3. 시작하기 =====
@@ -861,6 +848,56 @@ pres.addSection({ title: "메모리 감시" });
   );
 }
 
+// ===== 장치 검색 — 화면과 사용 순서 =====
+pres.addSection({ title: "장치 검색" });
+{
+  const s = contentSlide("장치 검색", "기능 7 · 장치 검색", "핑으로 같은 네트워크의 장치 찾기");
+  const mark = screenshot(s, "img_netscan-0.png", 0.6, 1.55, 8.0, 1264, 781, "장치 검색 화면: 192.168.0.0/24 범위를 검색해 응답한 장치 15대의 IP·응답시간·TTL·MAC·이름이 표에 채워지고, 아래에 권한 있는 네트워크만 검색하라는 안내가 표시됨");
+  mark(428, 98, 1);
+  mark(1193, 101, 2);
+  mark(345, 136, 3);
+  mark(300, 196, 4);
+  mark(620, 410, 5);
+  mark(1117, 272, 6);
+  const steps = [
+    ["IP 범위 입력", "화면 ① · CIDR(192.168.0.0/24) 또는 시작-끝, 최대 /16"],
+    ["[검색 시작]", "화면 ② · 멈출 때는 [중지]로 즉시 취소"],
+    ["동시 실행·이름 찾기", "화면 ③ · 동시 개수(기본 64), 역방향 DNS"],
+    ["제외할 IP", "화면 ④ · 건너뛸 주소(쉼표·공백·줄바꿈)"],
+    ["결과 표 · 정렬", "화면 ⑤ · IP·응답·TTL·MAC·제조사·이름"],
+    ["[CSV로 저장]", "화면 ⑥ · 엑셀로 여는 UTF-8 CSV"],
+  ];
+  steps.forEach(([t, d], i) => step(s, 8.95, 1.55 + i * 0.88, 3.8, i + 1, t, d));
+}
+
+// ===== 장치 검색 — 원리와 안전 =====
+{
+  const s = contentSlide("장치 검색", "기능 7 · 장치 검색", "무엇을 어떻게 찾나");
+  const cards = [
+    [String.fromCharCode(0xE968), C.accent1, "핑(ICMP)으로 찾기", "범위 안의 주소마다 핑을 보내 응답하는 장치를 찾습니다. 포트를 열거나 페이로드를 보내지 않는 ping·arp 수준입니다."],
+    [String.fromCharCode(0xE839), C.accent3, "MAC·제조사", "응답한 장치의 MAC 주소를 SendARP 로 얻고, 안 되면 arp -a 캐시로 보완합니다. 앞 3바이트(OUI)로 제조사를 추정합니다."],
+    [String.fromCharCode(0xE774), C.accent5, "이름(역방향 DNS)", "역방향 DNS 로 호스트 이름을 찾습니다. 느릴 수 있어 [이름 찾기]로 끌 수 있고, 못 찾으면 빈칸으로 둡니다."],
+    [String.fromCharCode(0xE7BA), C.accent4, "안전하게", "최대 /16(약 6.5만 개)까지만, 동시 실행 수를 제한하고 [중지]로 즉시 멈춥니다. 제외 목록으로 특정 주소를 건너뜁니다."],
+  ];
+  cards.forEach(([g, color, t, d], i) => {
+    const col = i % 2, row = Math.floor(i / 2);
+    const x = 0.6 + col * 6.15, y = 1.6 + row * 2.0;
+    card(s, x, y, 5.95, 1.82);
+    iconCircle(s, x + 0.3, y + 0.3, 0.6, g, color, color === C.accent2 ? C.text1 : C.background1);
+    s.addText(t, { x: x + 1.1, y: y + 0.3, w: 4.5, h: 0.6, valign: "middle", fontSize: 17, bold: true, color: C.text1, margin: 0, isTextBox: true, objectName: nm("nsTitle") });
+    s.addText(d, { x: x + 0.3, y: y + 1.02, w: 5.35, h: 0.72, fontSize: 14, color: C.text2, valign: "top", margin: 0, isTextBox: true, objectName: nm("nsBody") });
+  });
+  card(s, 0.6, 5.75, 12.15, 1.1, "FFF6E5");
+  iconCircle(s, 0.95, 6.1, 0.55, String.fromCharCode(0xE946), C.accent5, C.background1);
+  s.addText(
+    [
+      { text: "권한이 있는 네트워크만 검색하세요  ", options: { bold: true, fontSize: 15, color: C.text1, breakLine: true } },
+      { text: "포트 검사·서비스 탐지·OS 판별은 하지 않는, 같은 네트워크의 장치 목록을 만드는 도구입니다. 본인 소유이거나 검색 권한이 있는 네트워크에서만 사용하세요.", options: { fontSize: 14, color: C.text2 } },
+    ],
+    { x: 1.75, y: 5.75, w: 10.8, h: 1.1, valign: "middle", margin: 0, isTextBox: true, objectName: "nsNotice" }
+  );
+}
+
 // ===== 12. 디버그 터미널 =====
 pres.addSection({ title: "디버그 터미널" });
 {
@@ -917,7 +954,7 @@ pres.addSection({ title: "빌드 환경" });
     ["편집기 (선택)", "Visual Studio 2022 또는 VS Code"],
     ["UI / 패턴", "WPF + MVVM Toolkit 8.2.2"],
     ["기타 패키지", "MS DI · EventLog · Management · Ports 8.0"],
-    ["테스트", "xUnit (단위 테스트 170개)"],
+    ["테스트", "xUnit (단위 테스트 215개)"],
     ["버전 번호", "빌드한 날짜로 자동 (예: 2026.11.09)"],
     ["인터넷", "첫 빌드 때 NuGet 패키지 복원"],
   ];
@@ -964,14 +1001,15 @@ pres.addSection({ title: "빌드 환경" });
     ["Modules.SystemInfo", "기능 4 시스템 정보"],
     ["Modules.Comm", "기능 5 통신 테스트"],
     ["Modules.MemoryWatch", "기능 6 메모리 감시"],
+    ["Modules.NetScan", "기능 7 장치 검색"],
     ["SunTool.Tests", "규칙·충돌·감지·통신 테스트"],
   ];
   s.addText("src / tests 구성", { x: 0.6, y: 1.55, w: 6, h: 0.42, fontSize: 18, bold: true, color: C.text1, margin: 0, isTextBox: true, objectName: "projHead" });
   projects.forEach(([p, d], i) => {
-    const y = 2.05 + i * 0.48;
-    card(s, 0.6, y, 6.1, 0.42);
-    s.addText(p, { x: 0.85, y, w: 2.85, h: 0.42, fontFace: MONO, fontSize: 13, bold: true, color: i >= 3 && i <= 8 ? C.accent1 : C.text1, valign: "middle", margin: 0, isTextBox: true, objectName: nm("projName") });
-    s.addText(d, { x: 3.75, y, w: 2.85, h: 0.42, fontSize: 14, color: C.text2, valign: "middle", margin: 0, isTextBox: true, objectName: nm("projDesc") });
+    const y = 2.02 + i * 0.45;
+    card(s, 0.6, y, 6.1, 0.4);
+    s.addText(p, { x: 0.85, y, w: 2.85, h: 0.4, fontFace: MONO, fontSize: 13, bold: true, color: i >= 3 && i <= 9 ? C.accent1 : C.text1, valign: "middle", margin: 0, isTextBox: true, objectName: nm("projName") });
+    s.addText(d, { x: 3.75, y, w: 2.85, h: 0.4, fontSize: 14, color: C.text2, valign: "middle", margin: 0, isTextBox: true, objectName: nm("projDesc") });
   });
 
   s.addText("새 기능 추가 4단계", { x: 7.15, y: 1.55, w: 5.6, h: 0.42, fontSize: 18, bold: true, color: C.text1, margin: 0, isTextBox: true, objectName: "extHead" });
