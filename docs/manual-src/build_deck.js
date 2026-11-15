@@ -3,7 +3,7 @@ const path = require("path");
 const pptxgen = require("pptxgenjs");
 const { applyTheme } = require(process.env.PPTX_SKILL + "/scripts/apply_theme.js");
 
-const OUT = process.argv[2] || path.join(__dirname, "SunTool_사용매뉴얼.pptx");
+const OUT = process.argv[2] || path.join(__dirname, "SunTool-Manual.pptx");
 const IMG = (name) => path.join(__dirname, name);
 
 const THEME = {
