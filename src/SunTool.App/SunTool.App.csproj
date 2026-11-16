@@ -4,12 +4,20 @@
     <OutputType>WinExe</OutputType>
     <TargetFramework>net8.0-windows</TargetFramework>
     <UseWPF>true</UseWPF>
+    <!-- 트레이 아이콘(NotifyIcon)용. WinForms·Drawing 은 필요한 곳에서 직접 정규화해서 씁니다. -->
+    <UseWindowsForms>true</UseWindowsForms>
     <AssemblyName>SunTool</AssemblyName>
     <RootNamespace>SunTool.App</RootNamespace>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <!-- exe 파일 아이콘 (tools\make-icon.ps1 로 생성) -->
     <ApplicationIcon>Assets\SunTool.ico</ApplicationIcon>
   </PropertyGroup>
+
+  <!-- WinForms 를 켜면 전역 using 에 WinForms·Drawing 이 들어와 WPF 타입과 충돌하므로 전역에서 뺍니다. -->
+  <ItemGroup>
+    <Using Remove="System.Windows.Forms" />
+    <Using Remove="System.Drawing" />
+  </ItemGroup>
 
   <ItemGroup>
     <!-- 창 제목 표시줄·작업 표시줄 아이콘, 사이드바 로고 -->
@@ -34,6 +42,7 @@
     <ProjectReference Include="..\SunTool.Modules.MemoryWatch\SunTool.Modules.MemoryWatch.csproj" />
     <ProjectReference Include="..\SunTool.Modules.NetScan\SunTool.Modules.NetScan.csproj" />
     <ProjectReference Include="..\SunTool.Modules.ScreenCapture\SunTool.Modules.ScreenCapture.csproj" />
+    <ProjectReference Include="..\SunTool.Modules.RemoteView\SunTool.Modules.RemoteView.csproj" />
   </ItemGroup>
 
 </Project>

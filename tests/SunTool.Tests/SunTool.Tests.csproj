@@ -30,6 +30,7 @@
     <ProjectReference Include="..\..\src\SunTool.Modules.MemoryWatch\SunTool.Modules.MemoryWatch.csproj" />
     <ProjectReference Include="..\..\src\SunTool.Modules.NetScan\SunTool.Modules.NetScan.csproj" />
     <ProjectReference Include="..\..\src\SunTool.Modules.ScreenCapture\SunTool.Modules.ScreenCapture.csproj" />
+    <ProjectReference Include="..\..\src\SunTool.Modules.RemoteView\SunTool.Modules.RemoteView.csproj" />
   </ItemGroup>
 
 </Project>

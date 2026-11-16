@@ -5,6 +5,7 @@ using SunTool.Modules.EventLogViewer;
 using SunTool.Modules.FolderReplicator;
 using SunTool.Modules.MemoryWatch;
 using SunTool.Modules.NetScan;
+using SunTool.Modules.RemoteView;
 using SunTool.Modules.ScreenCapture;
 using SunTool.Modules.SystemInfo;
 
@@ -27,5 +28,6 @@ internal static class ModuleAssemblies
         typeof(MemoryWatchModule).Assembly,
         typeof(NetScanModule).Assembly,
         typeof(ScreenCaptureModule).Assembly,
+        typeof(RemoteViewModule).Assembly,
     ];
 }

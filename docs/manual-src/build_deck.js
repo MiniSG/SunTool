@@ -104,7 +104,7 @@ pres.addSection({ title: "시작하기" });
   s.addText("SunTool 사용 매뉴얼", { placeholder: "title" });
   s.addText(
     [
-      { text: "폴더 구조 복제 · 파일 이름 일괄 변경 · 이벤트 로그 조회 · 시스템 정보 · 통신 테스트 · 메모리 감시 · 장치 검색 · 화면 캡처", options: { breakLine: true } },
+      { text: "폴더 구조 복제 · 파일 이름 일괄 변경 · 이벤트 로그 조회 · 시스템 정보 · 통신 테스트 · 메모리 감시 · 장치 검색 · 화면 캡처 · 원격 화면 보기", options: { breakLine: true } },
       { text: "2026년 11월  ·  github.com/MiniSG/SunTool", options: { fontSize: 14 } },
     ],
     { placeholder: "body" }
@@ -124,6 +124,7 @@ pres.addSection({ title: "시작하기" });
   ];
   items.push([String.fromCharCode(0xE968), C.accent1, "장치 검색", "핑으로 같은 네트워크의 살아 있는 장치를 IP·MAC·이름과 함께 찾습니다."]);
   items.push([String.fromCharCode(0xE722), C.accent3, "화면 캡처", "전체 화면·활성 창·고른 창·영역을 PNG·클립보드로, 박스·텍스트 주석도 넣습니다."]);
+  items.push([String.fromCharCode(0xE8AF), C.accent1, "원격 화면 보기", "같은 네트워크의 다른 PC 화면을 PIN 으로 접속해 실시간으로 봅니다 (보기 전용)."]);
   items.push([String.fromCharCode(0xE756), C.text1, "디버그 터미널", "F12 키로 실시간 로그를 보고 명령을 실행해 문제를 확인합니다."]);
   items.forEach(([g, color, t, d], i) => {
     const col = i % 4, row = Math.floor(i / 4);
@@ -1013,6 +1014,52 @@ pres.addSection({ title: "화면 캡처" });
       { text: "저장 폴더를 비워 두면 [내 사진]\\SunTool 에 저장합니다. 원본은 캡처 즉시 설정대로 저장·복사되고, 주석을 올린 뒤에는 [주석본 저장]·[주석본 복사]로 따로 내보냅니다.", options: { fontSize: 14, color: C.text2 } },
     ],
     { x: 1.75, y: 5.75, w: 10.8, h: 1.1, valign: "middle", margin: 0, isTextBox: true, objectName: "scNotice" }
+  );
+}
+
+// ===== 원격 화면 보기 — 공유(호스트) 사용 순서 =====
+pres.addSection({ title: "원격 화면 보기" });
+{
+  const s = contentSlide("원격 화면 보기", "기능 9 · 원격 화면 보기", "내 화면을 PIN 으로 공유하기");
+  screenshot(s, "img_remote-0.png", 0.6, 1.55, 12.1, 1166, 248, "원격 화면 보기 공유(호스트) 화면: 역할 선택, 바인딩 모든 주소(0.0.0.0)·포트 5900·해상도 높음(1920)·화질 75·초당 프레임 5, 공유 중 내 주소 192.168.0.50 : 5900 과 PIN 246813, 보는 사람 1 이 표시됨");
+  const steps = [
+    ["역할 = 내 화면 공유", "맨 위에서 '내 화면 공유 (호스트)'를 고릅니다 (보기 전용)"],
+    ["해상도 고르기", "원본·1920·1600·1280. 높을수록 선명 (용량·지연 ↑)"],
+    ["화질·초당 프레임", "선명도는 해상도로, 부드러움은 프레임으로 맞춥니다"],
+    ["[공유 시작]", "6자리 PIN 이 만들어지고 내 주소가 표시됩니다"],
+    ["상대에게 알려 주기", "내 IP·포트·PIN 을 상대 PC [보기]에 입력하게 합니다"],
+    ["보는 사람 확인", "누가 보면 '보는 사람' 수가 늘고 화면 구석에 빨간 표시"],
+  ];
+  steps.forEach(([t, d], i) => {
+    const col = i % 2, row = Math.floor(i / 2);
+    step(s, 0.6 + col * 6.15, 4.45 + row * 0.92, 6.0, i + 1, t, d);
+  });
+}
+
+// ===== 원격 화면 보기 — 보기(뷰어)와 선택 기능 =====
+{
+  const s = contentSlide("원격 화면 보기", "기능 9 · 원격 화면 보기", "다른 PC 보기와 편의 기능");
+  screenshot(s, "img_remote-1.png", 0.6, 1.55, 6.0, 1166, 470, "원격 화면 보기 보기(뷰어) 화면: 역할을 다른 PC 보기로 고르고 호스트 IP 192.168.0.50·포트 5900·PIN 246813 을 입력, 아래에 '연결하면 상대 화면이 여기에 표시됩니다' 안내가 보임");
+  const cards = [
+    [String.fromCharCode(0xE8AF), C.accent1, "뷰어로 접속", "호스트 IP·포트·PIN 을 입력하고 [연결]. 연결되면 상대 화면이 실시간으로 보입니다."],
+    [String.fromCharCode(0xE7F4), C.accent3, "전체 화면", "[전체 화면] 버튼으로 크게 봅니다. Esc 로 닫습니다."],
+    [String.fromCharCode(0xE7F8), C.accent5, "모니터 선택", "상대 모니터가 여러 대면 전체 또는 개별 모니터를 골라 봅니다."],
+    [String.fromCharCode(0xE7C4), C.accent2, "트레이로 보내기", "창을 최소화하면 트레이로 들어갑니다. 아이콘을 두 번 누르면 다시 열립니다."],
+  ];
+  cards.forEach(([g, color, t, d], i) => {
+    const y = 1.6 + i * 1.12;
+    card(s, 6.95, y, 5.8, 1.0);
+    iconCircle(s, 7.2, y + 0.24, 0.52, g, color);
+    s.addText(t, { x: 7.85, y: y + 0.12, w: 4.7, h: 0.4, fontSize: 15, bold: true, color: C.text1, margin: 0, isTextBox: true, objectName: nm("rvTitle") });
+    s.addText(d, { x: 7.85, y: y + 0.5, w: 4.7, h: 0.45, fontSize: 12.5, color: C.text2, valign: "top", margin: 0, isTextBox: true, objectName: nm("rvBody") });
+  });
+  card(s, 0.6, 6.15, 6.0, 0.72, "FFF6E5");
+  s.addText(
+    [
+      { text: "보기 전용 · 같은 네트워크(LAN)  ", options: { bold: true, color: C.accent5 } },
+      { text: "마우스·키보드 제어는 없습니다. 평문으로 보내니 믿을 수 있는 네트워크에서만 쓰세요.", options: { color: C.text1 } },
+    ],
+    { x: 0.8, y: 6.15, w: 5.65, h: 0.72, fontSize: 12.5, valign: "middle", margin: 0, isTextBox: true, objectName: "rvNotice" }
   );
 }
 
