@@ -104,7 +104,7 @@ pres.addSection({ title: "시작하기" });
   s.addText("SunTool 사용 매뉴얼", { placeholder: "title" });
   s.addText(
     [
-      { text: "폴더 구조 복제 · 파일 이름 일괄 변경 · 이벤트 로그 조회 · 시스템 정보 · 통신 테스트 · 메모리 감시 · 장치 검색", options: { breakLine: true } },
+      { text: "폴더 구조 복제 · 파일 이름 일괄 변경 · 이벤트 로그 조회 · 시스템 정보 · 통신 테스트 · 메모리 감시 · 장치 검색 · 화면 캡처", options: { breakLine: true } },
       { text: "2026년 11월  ·  github.com/MiniSG/SunTool", options: { fontSize: 14 } },
     ],
     { placeholder: "body" }
@@ -123,14 +123,15 @@ pres.addSection({ title: "시작하기" });
     [String.fromCharCode(0xE9D9), C.accent4, "메모리 감시", "다른 프로그램의 커밋·커널 풀·핸들·GDI를 기록해 계속 늘어나는지 봅니다."],
   ];
   items.push([String.fromCharCode(0xE968), C.accent1, "장치 검색", "핑으로 같은 네트워크의 살아 있는 장치를 IP·MAC·이름과 함께 찾습니다."]);
+  items.push([String.fromCharCode(0xE722), C.accent3, "화면 캡처", "전체 화면·활성 창·고른 창·영역을 PNG·클립보드로, 박스·텍스트 주석도 넣습니다."]);
   items.push([String.fromCharCode(0xE756), C.text1, "디버그 터미널", "F12 키로 실시간 로그를 보고 명령을 실행해 문제를 확인합니다."]);
   items.forEach(([g, color, t, d], i) => {
     const col = i % 4, row = Math.floor(i / 4);
-    const x = 0.6 + col * 3.07, y = 1.6 + row * 2.45;
-    card(s, x, y, 2.9, 2.25);
-    iconCircle(s, x + 0.25, y + 0.25, 0.6, g, color);
-    s.addText(t, { x: x + 1.0, y: y + 0.25, w: 1.8, h: 0.6, valign: "middle", fontSize: 16, bold: true, color: C.text1, margin: 0, isTextBox: true, objectName: nm("cardTitle") });
-    s.addText(d, { x: x + 0.25, y: y + 1.0, w: 2.45, h: 1.15, fontSize: 13, color: C.text2, valign: "top", margin: 0, isTextBox: true, objectName: nm("cardBody") });
+    const x = 0.6 + col * 3.07, y = 1.55 + row * 1.95;
+    card(s, x, y, 2.9, 1.78);
+    iconCircle(s, x + 0.24, y + 0.2, 0.52, g, color);
+    s.addText(t, { x: x + 0.9, y: y + 0.2, w: 1.9, h: 0.52, valign: "middle", fontSize: 15, bold: true, color: C.text1, margin: 0, isTextBox: true, objectName: nm("cardTitle") });
+    s.addText(d, { x: x + 0.24, y: y + 0.8, w: 2.5, h: 0.92, fontSize: 12, color: C.text2, valign: "top", margin: 0, isTextBox: true, objectName: nm("cardBody") });
   });
 }
 
@@ -965,7 +966,57 @@ pres.addSection({ title: "장치 검색" });
   );
 }
 
-// ===== 12. 디버그 터미널 =====
+// ===== 12. 화면 캡처 — 화면과 사용 순서 =====
+pres.addSection({ title: "화면 캡처" });
+{
+  const s = contentSlide("화면 캡처", "기능 8 · 화면 캡처", "화면을 찍어 저장·복사하고 주석 달기");
+  const mark = screenshot(s, "img_screencap-0.png", 0.6, 1.55, 7.15, 1286, 973, "화면 캡처 화면: 캡처 방식(전체 화면·활성 창·고른 창·영역 선택·영역 재사용)과 지연, 저장·클립보드 설정과 파일명 규칙(컴퓨터명·IP·사용자명 토큰), 미리보기 위의 주석 도구(박스·텍스트·글자 크기·선 굵기·색)와 주석본 저장·복사 버튼이 보임");
+  mark(300, 161, 1);
+  mark(965, 161, 2);
+  mark(330, 263, 3);
+  mark(430, 366, 4);
+  mark(470, 456, 5);
+  mark(945, 456, 6);
+  const steps = [
+    ["캡처 방식 고르기", "화면 ① · 전체 화면·활성 창·고른 창·영역 선택(드래그)"],
+    ["지연", "화면 ② · 메뉴 펼친 모습을 찍을 때 0·3·5초"],
+    ["저장·클립보드", "화면 ③ · PNG 저장·클립보드 복사·저장 후 폴더 열기"],
+    ["파일명 규칙", "화면 ④ · 날짜에 컴퓨터명·IP·사용자명 토큰 넣기"],
+    ["주석 넣기", "화면 ⑤ · 박스·텍스트, 글자 크기·선 굵기·색 조절"],
+    ["주석본 저장·복사", "화면 ⑥ · 주석을 합쳐 PNG·클립보드로"],
+  ];
+  steps.forEach(([t, d], i) => step(s, 8.0, 1.55 + i * 0.88, 4.9, i + 1, t, d));
+}
+
+// ===== 화면 캡처 — 네 가지 방법과 주석 =====
+{
+  const s = contentSlide("화면 캡처", "기능 8 · 화면 캡처", "네 가지로 찍고, 바로 주석");
+  const cards = [
+    [String.fromCharCode(0xE7F4), C.accent1, "전체 화면 / 모니터", "모니터 전체 또는 특정 모니터를 통째로 찍습니다. 찍는 동안 SunTool 창은 잠시 숨겨 화면에서 빠집니다."],
+    [String.fromCharCode(0xE737), C.accent3, "활성 창 · 고른 창", "직전에 쓰던 창, 또는 목록에서 고른 창을 찍습니다. 가려져 있어도 PrintWindow 로 그려 받습니다."],
+    [String.fromCharCode(0xE7A8), C.accent5, "영역 선택 · 재사용", "화면을 얼려 두고 드래그로 사각형 영역을 고릅니다. 직전 영역은 [영역 재사용]으로 바로 다시 찍습니다."],
+    [String.fromCharCode(0xE70F), C.accent4, "주석 · 저장", "미리보기에 박스·텍스트를 올리고(글자 크기·굵기·색 조절) 주석본을 PNG·클립보드로 내보냅니다."],
+  ];
+  cards.forEach(([g, color, t, d], i) => {
+    const col = i % 2, row = Math.floor(i / 2);
+    const x = 0.6 + col * 6.15, y = 1.6 + row * 2.0;
+    card(s, x, y, 5.95, 1.82);
+    iconCircle(s, x + 0.3, y + 0.3, 0.6, g, color);
+    s.addText(t, { x: x + 1.1, y: y + 0.3, w: 4.5, h: 0.6, valign: "middle", fontSize: 17, bold: true, color: C.text1, margin: 0, isTextBox: true, objectName: nm("scTitle") });
+    s.addText(d, { x: x + 0.3, y: y + 1.02, w: 5.35, h: 0.72, fontSize: 14, color: C.text2, valign: "top", margin: 0, isTextBox: true, objectName: nm("scBody") });
+  });
+  card(s, 0.6, 5.75, 12.15, 1.1, "FFF6E5");
+  iconCircle(s, 0.95, 6.1, 0.55, String.fromCharCode(0xE946), C.accent5, C.background1);
+  s.addText(
+    [
+      { text: "저장 위치와 주석본  ", options: { bold: true, fontSize: 15, color: C.text1, breakLine: true } },
+      { text: "저장 폴더를 비워 두면 [내 사진]\\SunTool 에 저장합니다. 원본은 캡처 즉시 설정대로 저장·복사되고, 주석을 올린 뒤에는 [주석본 저장]·[주석본 복사]로 따로 내보냅니다.", options: { fontSize: 14, color: C.text2 } },
+    ],
+    { x: 1.75, y: 5.75, w: 10.8, h: 1.1, valign: "middle", margin: 0, isTextBox: true, objectName: "scNotice" }
+  );
+}
+
+// ===== 13. 디버그 터미널 =====
 pres.addSection({ title: "디버그 터미널" });
 {
   const s = contentSlide("디버그 터미널", "디버그 터미널", "문제가 생기면 F12");
