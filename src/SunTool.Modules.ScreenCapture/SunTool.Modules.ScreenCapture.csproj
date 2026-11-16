@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <!-- 색 선택기(ColorDialog)용. System.Drawing 도 Windows Desktop 런타임에서 함께 제공됩니다. -->
+    <UseWindowsForms>true</UseWindowsForms>
+    <RootNamespace>SunTool.Modules.ScreenCapture</RootNamespace>
+  </PropertyGroup>
+
+  <!-- WinForms 를 켜면 전역 using 에 WinForms·Drawing 이 들어와 WPF 타입과 충돌합니다.
+       전역에서 빼고, System.Drawing 은 필요한 파일에서 직접 using 합니다. -->
+  <ItemGroup>
+    <Using Remove="System.Windows.Forms" />
+    <Using Remove="System.Drawing" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\SunTool.Core\SunTool.Core.csproj" />
+    <ProjectReference Include="..\SunTool.Wpf\SunTool.Wpf.csproj" />
+  </ItemGroup>
+
+</Project>

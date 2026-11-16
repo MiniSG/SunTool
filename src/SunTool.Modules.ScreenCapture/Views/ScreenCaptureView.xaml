@@ -1,0 +1,155 @@
+<UserControl x:Class="SunTool.Modules.ScreenCapture.Views.ScreenCaptureView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:l="clr-namespace:SunTool.Wpf.Localization;assembly=SunTool.Wpf"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:SunTool.Modules.ScreenCapture.ViewModels"
+             mc:Ignorable="d"
+             d:DataContext="{d:DesignInstance Type=vm:ScreenCaptureViewModel}"
+             d:DesignWidth="1050" d:DesignHeight="720">
+
+    <Grid Margin="0">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <!-- ===== ① 캡처 방식 ===== -->
+        <Border Grid.Row="0" Style="{StaticResource Card}" Margin="0,0,0,10" Padding="14,12" IsEnabled="{Binding IsBusy, Converter={StaticResource InverseBool}}">
+            <StackPanel>
+                <TextBlock Text="{l:T '캡처 방식'}" Style="{StaticResource SectionTitle}" Margin="0,0,0,8" />
+                <WrapPanel>
+                    <!-- 전체 화면 -->
+                    <StackPanel Orientation="Horizontal" Margin="0,2,18,8">
+                        <Button Content="{l:T '전체 화면'}" Command="{Binding CaptureFullScreenCommand}" Style="{StaticResource AccentButton}" MinWidth="96" />
+                        <ComboBox ItemsSource="{Binding MonitorTargets}" SelectedItem="{Binding SelectedMonitor}" MinWidth="200" Margin="6,0,0,0" VerticalAlignment="Center" />
+                    </StackPanel>
+                    <!-- 활성 창 -->
+                    <Button Content="{l:T '활성 창'}" Command="{Binding CaptureActiveWindowCommand}" MinWidth="96" Margin="0,2,18,8"
+                            ToolTip="{l:T '캡처를 누르기 직전에 쓰던 창을 찍습니다. 지연을 두면 다른 창을 띄워 둘 수 있습니다.'}" />
+                    <!-- 영역 선택 -->
+                    <Button Content="{l:T '영역 선택'}" Command="{Binding CaptureRegionCommand}" MinWidth="96" Margin="0,2,8,8"
+                            ToolTip="{l:T '화면을 얼려 두고 드래그로 사각형 영역을 고릅니다. Esc 로 취소.'}" />
+                    <!-- 영역 재사용 (지정된 영역이 없으면 비활성화) -->
+                    <Button Content="{l:T '영역 재사용'}" Command="{Binding CaptureLastRegionCommand}" MinWidth="96" Margin="0,2,18,8"
+                            ToolTip="{l:T '직전에 고른 영역을 그대로 다시 캡처합니다.'}" />
+                    <!-- 지연 -->
+                    <StackPanel Orientation="Horizontal" Margin="0,2,0,8" VerticalAlignment="Center">
+                        <TextBlock Text="{l:T '지연'}" VerticalAlignment="Center" Margin="0,0,6,0" />
+                        <ComboBox ItemsSource="{Binding DelayChoices}" SelectedItem="{Binding DelaySeconds}" Width="60" />
+                        <TextBlock Text="{l:T '초'}" VerticalAlignment="Center" Margin="4,0,0,0" />
+                    </StackPanel>
+                </WrapPanel>
+
+                <!-- 창 선택 -->
+                <DockPanel Margin="0,4,0,0">
+                    <Button DockPanel.Dock="Left" Content="{l:T '고른 창 캡처'}" Command="{Binding CapturePickedWindowCommand}" MinWidth="110" />
+                    <Button DockPanel.Dock="Right" Content="{l:T '목록 새로고침'}" Command="{Binding RefreshWindowsCommand}" Padding="10,3" Margin="6,0,0,0" />
+                    <ComboBox ItemsSource="{Binding Windows}" SelectedItem="{Binding SelectedWindow}" DisplayMemberPath="DisplayText"
+                              Margin="8,0,0,0" VerticalAlignment="Center"
+                              ToolTip="{l:T '지금 열려 있는 창 목록. 가려져 있어도 캡처합니다.'}" />
+                </DockPanel>
+            </StackPanel>
+        </Border>
+
+        <!-- ===== ② 처리 설정 ===== -->
+        <Border Grid.Row="1" Style="{StaticResource Card}" Margin="0,0,0,10" Padding="14,12">
+            <StackPanel>
+                <WrapPanel>
+                    <CheckBox Content="{l:T '파일로 저장 (PNG)'}" IsChecked="{Binding SaveToFile}" VerticalAlignment="Center" Margin="0,2,20,2" />
+                    <CheckBox Content="{l:T '클립보드에 복사'}" IsChecked="{Binding CopyToClipboard}" VerticalAlignment="Center" Margin="0,2,20,2" />
+                    <CheckBox Content="{l:T '저장 후 폴더 열기'}" IsChecked="{Binding OpenFolderAfter}" VerticalAlignment="Center" Margin="0,2,20,2" />
+                </WrapPanel>
+                <DockPanel Margin="0,10,0,0" IsEnabled="{Binding SaveToFile}">
+                    <TextBlock Text="{l:T '저장 폴더'}" VerticalAlignment="Center" Margin="0,0,8,0" Width="70" />
+                    <Button DockPanel.Dock="Right" Content="{l:T '폴더 열기'}" Command="{Binding OpenFolderCommand}" Padding="10,3" Margin="6,0,0,0" />
+                    <Button DockPanel.Dock="Right" Content="{l:T '찾아보기'}" Command="{Binding BrowseFolderCommand}" Padding="10,3" Margin="6,0,0,0" />
+                    <TextBox Text="{Binding SaveFolder, UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Center"
+                             ToolTip="{l:T '비워 두면 내 사진 폴더 아래 SunTool 폴더에 저장합니다.'}" />
+                </DockPanel>
+                <StackPanel Margin="0,8,0,0" IsEnabled="{Binding SaveToFile}">
+                    <DockPanel>
+                        <TextBlock Text="{l:T '파일명 규칙'}" VerticalAlignment="Center" Margin="0,0,8,0" Width="70" />
+                        <TextBox Text="{Binding FileNamePattern, UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Center"
+                                 ToolTip="{l:T '날짜·시간으로 파일 이름을 만듭니다 (.NET 날짜 서식). 아래 버튼으로 컴퓨터명·IP·사용자명도 넣을 수 있습니다.'}" />
+                    </DockPanel>
+                    <WrapPanel Margin="78,6,0,0">
+                        <TextBlock Text="{l:T '넣기'}" Style="{StaticResource HintText}" VerticalAlignment="Center" Margin="0,0,8,0" />
+                        <Button Content="{l:T '컴퓨터명'}" Command="{Binding InsertTokenCommand}" CommandParameter="{}{host}" Padding="8,2" Margin="0,0,6,0" />
+                        <Button Content="{l:T 'IP'}" Command="{Binding InsertTokenCommand}" CommandParameter="{}{ip}" Padding="8,2" Margin="0,0,6,0" />
+                        <Button Content="{l:T '사용자명'}" Command="{Binding InsertTokenCommand}" CommandParameter="{}{user}" Padding="8,2" Margin="0,0,6,0" />
+                        <TextBlock Text="{l:T '예) capture-20261116-153000.png'}" Style="{StaticResource HintText}" VerticalAlignment="Center" Margin="6,0,0,0" />
+                    </WrapPanel>
+                </StackPanel>
+            </StackPanel>
+        </Border>
+
+        <!-- ===== ③ 미리보기 + 주석 ===== -->
+        <Border Grid.Row="2" Style="{StaticResource Card}" Padding="12,10">
+            <DockPanel>
+                <DockPanel DockPanel.Dock="Top" Margin="0,0,0,8">
+                    <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                        <Button Content="{l:T '파일 열기'}" Command="{Binding OpenLastFileCommand}" Padding="10,3" />
+                    </StackPanel>
+                    <TextBlock Text="{l:T '미리보기'}" Style="{StaticResource SectionTitle}" VerticalAlignment="Center" Margin="0,0,12,0" />
+                    <TextBlock Text="{Binding LastSizeText}" Style="{StaticResource HintText}" VerticalAlignment="Center" />
+                </DockPanel>
+
+                <!-- 주석 도구 -->
+                <WrapPanel DockPanel.Dock="Top" Margin="0,0,0,8">
+                    <TextBlock Text="{l:T '주석'}" Style="{StaticResource HintText}" VerticalAlignment="Center" Margin="0,0,8,0" />
+                    <RadioButton x:Name="ToolNone" GroupName="AnnoTool" Content="{l:T '없음'}" IsChecked="True" VerticalAlignment="Center" Margin="0,0,8,0" Checked="Tool_Changed" />
+                    <RadioButton x:Name="ToolBox" GroupName="AnnoTool" Content="{l:T '박스'}" VerticalAlignment="Center" Margin="0,0,8,0" Checked="Tool_Changed" />
+                    <RadioButton x:Name="ToolText" GroupName="AnnoTool" Content="{l:T '텍스트'}" VerticalAlignment="Center" Margin="0,0,14,0" Checked="Tool_Changed" />
+                    <TextBlock Text="{l:T '글자'}" Style="{StaticResource HintText}" VerticalAlignment="Center" Margin="0,0,6,0" />
+                    <ComboBox x:Name="FontSizeCombo" Width="60" VerticalAlignment="Center" Margin="0,0,12,0" SelectionChanged="FontSize_Changed"
+                              ToolTip="{l:T '텍스트 글자 크기 (픽셀)'}" />
+                    <TextBlock Text="{l:T '굵기'}" Style="{StaticResource HintText}" VerticalAlignment="Center" Margin="0,0,6,0" />
+                    <ComboBox x:Name="ThicknessCombo" Width="56" VerticalAlignment="Center" Margin="0,0,12,0" SelectionChanged="Thickness_Changed"
+                              ToolTip="{l:T '박스 선 굵기 (픽셀)'}" />
+                    <Button x:Name="ColorButton" Click="Color_Click" Padding="6,2" Margin="0,0,14,0" VerticalAlignment="Center" ToolTip="{l:T '색 고르기'}">
+                        <StackPanel Orientation="Horizontal">
+                            <Border x:Name="ColorSwatch" Width="16" Height="16" CornerRadius="2" Background="Red" BorderBrush="#80000000" BorderThickness="1" Margin="0,0,6,0" />
+                            <TextBlock Text="{l:T '색'}" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Button>
+                    <Button Content="{l:T '실행취소'}" Click="Undo_Click" Padding="8,2" Margin="0,0,6,0" />
+                    <Button Content="{l:T '주석 지우기'}" Click="ClearAnno_Click" Padding="8,2" Margin="0,0,14,0" />
+                    <Button Content="{l:T '주석본 저장'}" Click="SaveAnno_Click" Padding="8,2" Margin="0,0,6,0" />
+                    <Button Content="{l:T '주석본 복사'}" Click="CopyAnno_Click" Padding="8,2" />
+                </WrapPanel>
+
+                <TextBlock DockPanel.Dock="Bottom" Text="{Binding LastSavePath}" Style="{StaticResource HintText}" TextTrimming="CharacterEllipsis"
+                           Margin="0,8,0,0" ToolTip="{Binding LastSavePath}" />
+
+                <Border Background="#20808080" CornerRadius="4" ClipToBounds="True">
+                    <Viewbox Stretch="Uniform" StretchDirection="DownOnly" Margin="6" HorizontalAlignment="Center" VerticalAlignment="Center">
+                        <Grid x:Name="AnnotationHost">
+                            <Image Source="{Binding LastImage}" Stretch="Fill" RenderOptions.BitmapScalingMode="HighQuality" />
+                            <Canvas x:Name="AnnotationCanvas" Background="Transparent"
+                                    MouseLeftButtonDown="Canvas_MouseDown" MouseMove="Canvas_MouseMove" MouseLeftButtonUp="Canvas_MouseUp" />
+                        </Grid>
+                    </Viewbox>
+                </Border>
+            </DockPanel>
+        </Border>
+
+        <!-- ===== ④ 상태 ===== -->
+        <StackPanel Grid.Row="3" Margin="0,8,0,0">
+            <TextBlock Text="{Binding StatusText}" TextWrapping="Wrap">
+                <TextBlock.Style>
+                    <Style TargetType="{x:Type TextBlock}">
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding StatusIsError}" Value="True">
+                                <Setter Property="Foreground" Value="{StaticResource DangerBrush}" />
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </TextBlock.Style>
+            </TextBlock>
+        </StackPanel>
+    </Grid>
+</UserControl>

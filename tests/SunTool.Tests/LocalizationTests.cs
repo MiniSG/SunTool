@@ -18,6 +18,7 @@ public class LocalizationTests
         typeof(SunTool.Modules.Comm.CommModule).Assembly,
         typeof(SunTool.Modules.MemoryWatch.MemoryWatchModule).Assembly,
         typeof(SunTool.Modules.NetScan.NetScanModule).Assembly,
+        typeof(SunTool.Modules.ScreenCapture.ScreenCaptureModule).Assembly,
     ];
 
     public static IEnumerable<object[]> AssemblyNames => Assemblies.Select(a => new object[] { a.GetName().Name! });
