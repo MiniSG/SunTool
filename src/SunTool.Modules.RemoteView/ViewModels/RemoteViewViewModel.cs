@@ -41,6 +41,8 @@ public sealed class RemoteViewSettings
 
     public int Fps { get; set; } = 5;
 
+    public bool AllowControl { get; set; }
+
     public string? HostAddress { get; set; }
 
     public int ViewerPort { get; set; } = 5900;
@@ -135,6 +137,17 @@ public sealed partial class RemoteViewViewModel : ObservableObject, IDisposable
     [ObservableProperty]
     private int _fpsSetting = 5;
 
+    /// <summary>원격 제어 허용(호스트). 기본 꺼짐. 켜면 버전 2 뷰어 한 명이 내 PC를 조작할 수 있습니다.</summary>
+    [ObservableProperty]
+    private bool _allowControl;
+
+    /// <summary>지금 제어 중인 뷰어 주소(없으면 null).</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsBeingControlled))]
+    private string? _controllerAddress;
+
+    public bool IsBeingControlled => !string.IsNullOrEmpty(ControllerAddress);
+
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(CanEditMode), nameof(CanEditHostSetup))]
     [NotifyCanExecuteChangedFor(nameof(StartHostCommand), nameof(StopHostCommand))]
@@ -172,8 +185,10 @@ public sealed partial class RemoteViewViewModel : ObservableObject, IDisposable
             Pin = Logic.Pin.Generate();
             _host = new RemoteHost(Pin, Quality, maxWidth: SelectedResolution?.MaxWidth ?? 1920, fps: FpsSetting);
             _host.ViewerCountChanged += HandleViewerCount;
+            _host.ControllerChanged += HandleController;
             _host.ErrorOccurred += OnHostError;
             _host.Start(bind, Port);
+            _host.SetAllowControl(AllowControl);
 
             IsHosting = true;
             ViewerCount = 0;
@@ -208,6 +223,7 @@ public sealed partial class RemoteViewViewModel : ObservableObject, IDisposable
         if (_host is not null)
         {
             _host.ViewerCountChanged -= HandleViewerCount;
+            _host.ControllerChanged -= HandleController;
             _host.ErrorOccurred -= OnHostError;
             _host.Dispose();
             _host = null;
@@ -215,6 +231,7 @@ public sealed partial class RemoteViewViewModel : ObservableObject, IDisposable
 
         IsHosting = false;
         ViewerCount = 0;
+        ControllerAddress = null;
         Pin = string.Empty;
         MyIpText = string.Empty;
         UpdateIndicator();
@@ -228,6 +245,25 @@ public sealed partial class RemoteViewViewModel : ObservableObject, IDisposable
             : Loc.T("공유 중입니다. 보는 사람이 없습니다."));
         UpdateIndicator();
     });
+
+    private void HandleController(string? address) => _dispatcher.BeginInvoke(() =>
+    {
+        ControllerAddress = address;
+        if (!string.IsNullOrEmpty(address))
+        {
+            SetHostStatus(Loc.F("{0} 가 지금 내 PC를 제어하고 있습니다.", address));
+            _log.Info($"원격 제어 시작: {address}");
+        }
+
+        UpdateIndicator();
+    });
+
+    partial void OnAllowControlChanged(bool value)
+    {
+        _host?.SetAllowControl(value);
+        SaveSettings();
+        _log.Info($"원격 제어 허용: {value}");
+    }
 
     private void OnHostError(string message) => _dispatcher.BeginInvoke(() =>
         _log.Warn($"원격 공유 오류: {message}"));
@@ -246,7 +282,7 @@ public sealed partial class RemoteViewViewModel : ObservableObject, IDisposable
     private string _inputPin = string.Empty;
 
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(CanEditMode), nameof(CanEditViewerSetup), nameof(NotConnected), nameof(ShowMonitorPicker))]
+    [NotifyPropertyChangedFor(nameof(CanEditMode), nameof(CanEditViewerSetup), nameof(NotConnected), nameof(ShowMonitorPicker), nameof(CanToggleControl), nameof(ControlHintText))]
     [NotifyCanExecuteChangedFor(nameof(ConnectCommand), nameof(DisconnectCommand))]
     private bool _isConnected;
 
@@ -261,6 +297,29 @@ public sealed partial class RemoteViewViewModel : ObservableObject, IDisposable
     private BitmapSource? _remoteImage;
 
     private BitmapSource? _lastFullFrame;
+
+    /// <summary>전체 전송 이미지 크기(입력 좌표 환산용).</summary>
+    private int _remoteFullW;
+    private int _remoteFullH;
+
+    /// <summary>호스트가 제어를 허용했는지(뷰어).</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(CanToggleControl), nameof(ControlHintText))]
+    private bool _canControl;
+
+    /// <summary>뷰어가 실제로 입력을 보내는 중인지. CanControl 이고 켰을 때만 전송합니다.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ControlHintText))]
+    private bool _isControlling;
+
+    /// <summary>제어 토글을 쓸 수 있는 상태(연결됨 + 호스트 허용).</summary>
+    public bool CanToggleControl => IsConnected && CanControl;
+
+    public string ControlHintText => !CanControl
+        ? Loc.T("보기 전용입니다. 호스트가 제어를 허용하면 조작할 수 있습니다.")
+        : IsControlling
+            ? Loc.T("제어 중입니다. 이 화면 위의 마우스·키보드가 상대 PC로 전송됩니다.")
+            : Loc.T("제어가 허용되었습니다. [제어 시작]을 누르면 조작할 수 있습니다.");
 
     public System.Collections.ObjectModel.ObservableCollection<ViewMonitorOption> ViewMonitors { get; } = [];
 
@@ -298,6 +357,7 @@ public sealed partial class RemoteViewViewModel : ObservableObject, IDisposable
         _client = new RemoteViewerClient();
         _client.Connected += OnConnected;
         _client.FrameReceived += OnFrameReceived;
+        _client.ControlGranted += OnControlGranted;
         _client.Disconnected += OnDisconnected;
 
         await _client.ConnectAsync(HostAddress.Trim(), ViewerPort, InputPin.Trim(), CancellationToken.None).ConfigureAwait(true);
@@ -318,6 +378,7 @@ public sealed partial class RemoteViewViewModel : ObservableObject, IDisposable
         {
             _client.Connected -= OnConnected;
             _client.FrameReceived -= OnFrameReceived;
+            _client.ControlGranted -= OnControlGranted;
             _client.Disconnected -= OnDisconnected;
             _client.Dispose();
             _client = null;
@@ -326,6 +387,8 @@ public sealed partial class RemoteViewViewModel : ObservableObject, IDisposable
         IsConnected = false;
         IsConnecting = false;
         Fps = 0;
+        CanControl = false;
+        IsControlling = false;
         _lastFullFrame = null;
         ViewMonitors.Clear();
         SelectedViewMonitor = null;
@@ -336,6 +399,10 @@ public sealed partial class RemoteViewViewModel : ObservableObject, IDisposable
     {
         IsConnecting = false;
         IsConnected = true;
+        _remoteFullW = w;
+        _remoteFullH = h;
+        CanControl = false;
+        IsControlling = false;
         RemoteSizeText = Loc.F("{0} × {1}", w, h);
 
         ViewMonitors.Clear();
@@ -405,6 +472,69 @@ public sealed partial class RemoteViewViewModel : ObservableObject, IDisposable
         }
     }
 
+    private void OnControlGranted(bool granted) => _dispatcher.BeginInvoke(() =>
+    {
+        CanControl = granted;
+        if (!granted)
+        {
+            IsControlling = false;
+        }
+
+        SetViewerStatus(granted
+            ? Loc.T("호스트가 제어를 허용했습니다. [제어 시작]으로 조작할 수 있습니다.")
+            : Loc.F("연결됨 · {0}", HostAddress));
+    });
+
+    partial void OnCanControlChanged(bool value)
+    {
+        if (!value)
+        {
+            IsControlling = false;
+        }
+    }
+
+    [RelayCommand]
+    private void ToggleControl()
+    {
+        if (!CanToggleControl)
+        {
+            IsControlling = false;
+            return;
+        }
+
+        IsControlling = !IsControlling;
+    }
+
+    // ===== 뷰어 입력 전송 (View 에서 호출) =====
+
+    /// <summary>제어 중일 때만 마우스 입력을 보냅니다. u,v 는 표시 이미지 기준 0~1.</summary>
+    public void SendMouseInput(RemoteProtocol.MouseAction action, double u, double v, int data = 0)
+    {
+        if (!IsControlling || !CanControl || _client is null)
+        {
+            return;
+        }
+
+        var (cx, cy, cw, ch) = CurrentCrop();
+        var (nx, ny) = InputMapping.ToFull(u, v, cx, cy, cw, ch, _remoteFullW, _remoteFullH);
+        _client.SendMouse(action, nx, ny, data);
+    }
+
+    /// <summary>제어 중일 때만 키 입력을 보냅니다.</summary>
+    public void SendKeyInput(ushort vk, bool down)
+    {
+        if (!IsControlling || !CanControl || _client is null)
+        {
+            return;
+        }
+
+        _client.SendKey(vk, down);
+    }
+
+    /// <summary>지금 보고 있는 영역(개별 모니터면 그 크롭, 전체면 0).</summary>
+    private (int X, int Y, int W, int H) CurrentCrop()
+        => SelectedViewMonitor is { Index: >= 0 } m ? (m.X, m.Y, m.W, m.H) : (0, 0, 0, 0);
+
     private void OnDisconnected(string reason) => _dispatcher.BeginInvoke(() =>
     {
         var wasConnected = IsConnected || IsConnecting;
@@ -425,7 +555,7 @@ public sealed partial class RemoteViewViewModel : ObservableObject, IDisposable
         if (IsHosting && ViewerCount > 0)
         {
             _indicator ??= new RemoteIndicatorWindow();
-            _indicator.SetCount(ViewerCount);
+            _indicator.SetState(ViewerCount, IsBeingControlled, ControllerAddress);
             _indicator.Show();
         }
         else
@@ -458,6 +588,7 @@ public sealed partial class RemoteViewViewModel : ObservableObject, IDisposable
             SelectedResolution = ResolutionChoices.FirstOrDefault(r => r.MaxWidth == s.MaxWidth)
                 ?? ResolutionChoices.First(r => r.MaxWidth == 1920);
             FpsSetting = FpsChoices.Contains(s.Fps) ? s.Fps : 5;
+            AllowControl = s.AllowControl;
             HostAddress = s.HostAddress ?? string.Empty;
             ViewerPort = s.ViewerPort is > 0 and < 65536 ? s.ViewerPort : 5900;
         }
@@ -481,6 +612,7 @@ public sealed partial class RemoteViewViewModel : ObservableObject, IDisposable
             Quality = Quality,
             MaxWidth = SelectedResolution?.MaxWidth ?? 1920,
             Fps = FpsSetting,
+            AllowControl = AllowControl,
             HostAddress = HostAddress,
             ViewerPort = ViewerPort,
         });

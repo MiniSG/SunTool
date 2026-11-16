@@ -5,21 +5,38 @@ namespace SunTool.Modules.RemoteView.Logic;
 /// <summary>
 /// 원격 화면 보기용 아주 단순한 TCP 프로토콜.
 /// 모든 메시지는 [4바이트 길이(빅엔디언)][payload] 이고, payload 첫 바이트가 종류입니다.
-/// 보기 전용이라 입력(마우스·키보드)은 주고받지 않습니다.
+/// 기본은 보기 전용이며, 호스트가 제어를 허용했을 때만 입력(마우스·키보드)을 뷰어→호스트로 보냅니다.
 /// </summary>
 public static class RemoteProtocol
 {
-    public const int Version = 1;
+    /// <summary>버전 2 부터 원격 제어(입력 전송)를 지원합니다.</summary>
+    public const int Version = 2;
 
     /// <summary>한 메시지 최대 크기 (장난 데이터로 메모리를 터뜨리지 않도록). 64 MB.</summary>
     public const int MaxMessageSize = 64 * 1024 * 1024;
 
     public enum MsgType : byte
     {
-        Hello = 1,       // 뷰어 → 호스트: 버전 + PIN
-        HelloOk = 2,     // 호스트 → 뷰어: 화면 크기
-        HelloError = 3,  // 호스트 → 뷰어: 거부 (PIN 틀림·버전 불일치)
-        Frame = 4,       // 호스트 → 뷰어: JPEG 한 장
+        Hello = 1,         // 뷰어 → 호스트: 버전 + PIN
+        HelloOk = 2,       // 호스트 → 뷰어: 화면 크기
+        HelloError = 3,    // 호스트 → 뷰어: 거부 (PIN 틀림·버전 불일치)
+        Frame = 4,         // 호스트 → 뷰어: JPEG 한 장
+        ControlGrant = 5,  // 호스트 → 뷰어: 제어 허용/해제 알림
+        InputMouse = 6,    // 뷰어 → 호스트: 마우스 입력 (정규화 좌표 0~1)
+        InputKey = 7,      // 뷰어 → 호스트: 키보드 입력 (가상 키 코드)
+    }
+
+    /// <summary>마우스 입력 종류.</summary>
+    public enum MouseAction : byte
+    {
+        Move = 0,
+        LeftDown = 1,
+        LeftUp = 2,
+        RightDown = 3,
+        RightUp = 4,
+        MiddleDown = 5,
+        MiddleUp = 6,
+        Wheel = 7,
     }
 
     // ===================================================================== 프레이밍
@@ -175,6 +192,80 @@ public static class RemoteProtocol
         }
 
         jpeg = payload[1..];
+        return true;
+    }
+
+    // ===================================================================== 제어·입력 (버전 2)
+
+    /// <summary>호스트 → 뷰어: 제어 허용 여부 알림.</summary>
+    public static byte[] EncodeControlGrant(bool granted) => [(byte)MsgType.ControlGrant, (byte)(granted ? 1 : 0)];
+
+    public static bool TryDecodeControlGrant(byte[] payload, out bool granted)
+    {
+        granted = false;
+        if (payload.Length < 2 || payload[0] != (byte)MsgType.ControlGrant)
+        {
+            return false;
+        }
+
+        granted = payload[1] != 0;
+        return true;
+    }
+
+    /// <summary>뷰어 → 호스트: 마우스 입력. <paramref name="nx"/>·<paramref name="ny"/> 는 전송 이미지 기준 0~1 좌표.</summary>
+    public static byte[] EncodeInputMouse(MouseAction action, float nx, float ny, int data)
+    {
+        var payload = new byte[1 + 1 + 4 + 4 + 4];
+        payload[0] = (byte)MsgType.InputMouse;
+        payload[1] = (byte)action;
+        BinaryPrimitives.WriteSingleBigEndian(payload.AsSpan(2, 4), nx);
+        BinaryPrimitives.WriteSingleBigEndian(payload.AsSpan(6, 4), ny);
+        BinaryPrimitives.WriteInt32BigEndian(payload.AsSpan(10, 4), data);
+        return payload;
+    }
+
+    public static bool TryDecodeInputMouse(byte[] payload, out MouseAction action, out float nx, out float ny, out int data)
+    {
+        action = MouseAction.Move;
+        nx = 0;
+        ny = 0;
+        data = 0;
+        if (payload.Length < 14 || payload[0] != (byte)MsgType.InputMouse)
+        {
+            return false;
+        }
+
+        action = (MouseAction)payload[1];
+        nx = BinaryPrimitives.ReadSingleBigEndian(payload.AsSpan(2, 4));
+        ny = BinaryPrimitives.ReadSingleBigEndian(payload.AsSpan(6, 4));
+        data = BinaryPrimitives.ReadInt32BigEndian(payload.AsSpan(10, 4));
+        return true;
+    }
+
+    /// <summary>뷰어 → 호스트: 키보드 입력. <paramref name="vk"/> 는 Win32 가상 키 코드.</summary>
+    public static byte[] EncodeInputKey(ushort vk, bool down, ushort modifiers)
+    {
+        var payload = new byte[1 + 2 + 1 + 2];
+        payload[0] = (byte)MsgType.InputKey;
+        BinaryPrimitives.WriteUInt16BigEndian(payload.AsSpan(1, 2), vk);
+        payload[3] = (byte)(down ? 1 : 0);
+        BinaryPrimitives.WriteUInt16BigEndian(payload.AsSpan(4, 2), modifiers);
+        return payload;
+    }
+
+    public static bool TryDecodeInputKey(byte[] payload, out ushort vk, out bool down, out ushort modifiers)
+    {
+        vk = 0;
+        down = false;
+        modifiers = 0;
+        if (payload.Length < 6 || payload[0] != (byte)MsgType.InputKey)
+        {
+            return false;
+        }
+
+        vk = BinaryPrimitives.ReadUInt16BigEndian(payload.AsSpan(1, 2));
+        down = payload[3] != 0;
+        modifiers = BinaryPrimitives.ReadUInt16BigEndian(payload.AsSpan(4, 2));
         return true;
     }
 

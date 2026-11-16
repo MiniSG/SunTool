@@ -23,7 +23,7 @@
   "역할": "Role",
   "내 화면 공유 (호스트)": "Share my screen (host)",
   "다른 PC 보기 (뷰어)": "View another PC (viewer)",
-  "보기 전용입니다(마우스·키보드 제어 없음). 공유는 호스트가 직접 켜야 하고, PIN 이 맞아야 연결됩니다. 같은 네트워크(LAN)에서 평문으로 전송하니, 믿을 수 있는 네트워크에서만 쓰세요.": "View-only (no mouse/keyboard control). The host must turn sharing on, and the PIN must match to connect. It sends unencrypted over the local network (LAN), so use it only on networks you trust.",
+  "기본은 보기 전용이며, 호스트가 [원격 제어 허용]을 켜면 상대가 조작할 수 있습니다. 공유는 호스트가 직접 켜야 하고, PIN 이 맞아야 연결됩니다. 같은 네트워크(LAN)에서 평문으로 전송하니, 믿을 수 있는 네트워크에서만 쓰세요.": "View-only by default; if the host turns on [Allow remote control], the other side can operate it. The host must turn sharing on, and the PIN must match to connect. It sends unencrypted over the local network (LAN), so use it only on networks you trust.",
   "공유 시작": "Start sharing",
   "공유 중지": "Stop sharing",
   "바인딩": "Bind",
@@ -50,5 +50,16 @@
   "전체 (모든 모니터)": "All (every monitor)",
   "모니터 {0}": "Monitor {0}",
   "볼 모니터 고르기 (전체 또는 개별 모니터)": "Choose which monitor to view (all or a single monitor)",
-  " fps": " fps"
+  " fps": " fps",
+  "원격 제어 허용 (상대가 내 마우스·키보드를 조작)": "Allow remote control (the other side moves my mouse/keyboard)",
+  "끄면 즉시 제어가 중단됩니다. PIN 을 아는 사람이면 누구나 제어할 수 있으니, 믿을 수 있는 상대에게만 알려 주세요. UAC 창·잠금 화면은 제어되지 않습니다.": "Turning it off stops control immediately. Anyone who knows the PIN can take control, so share it only with people you trust. UAC prompts and the lock screen cannot be controlled.",
+  "제어 중": "Controlling",
+  "{0} 가 지금 내 PC를 제어하고 있습니다.": "{0} is now controlling my PC.",
+  "● 다른 PC가 내 화면을 제어 중 · {0}": "● Another PC is controlling your screen · {0}",
+  "제어 시작": "Take control",
+  "제어 중지": "Stop control",
+  "보기 전용입니다. 호스트가 제어를 허용하면 조작할 수 있습니다.": "View-only. You can control once the host allows it.",
+  "제어 중입니다. 이 화면 위의 마우스·키보드가 상대 PC로 전송됩니다.": "Controlling. Mouse and keyboard over this view are sent to the other PC.",
+  "제어가 허용되었습니다. [제어 시작]을 누르면 조작할 수 있습니다.": "Control allowed. Press [Take control] to operate the other PC.",
+  "호스트가 제어를 허용했습니다. [제어 시작]으로 조작할 수 있습니다.": "The host allowed control. Use [Take control] to operate it."
 }

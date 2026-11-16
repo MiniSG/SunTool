@@ -46,6 +46,14 @@ public sealed class RemoteIndicatorWindow : Window
         _text.Text = Loc.F("● 다른 PC가 내 화면을 보는 중 · {0}대", count);
     }
 
+    /// <summary>제어 중이면 더 강한 문구로 바꿉니다.</summary>
+    public void SetState(int count, bool beingControlled, string? controller)
+    {
+        _text.Text = beingControlled
+            ? Loc.F("● 다른 PC가 내 화면을 제어 중 · {0}", controller ?? "?")
+            : Loc.F("● 다른 PC가 내 화면을 보는 중 · {0}대", count);
+    }
+
     private void Reposition()
     {
         // 주 화면 위쪽 가운데.

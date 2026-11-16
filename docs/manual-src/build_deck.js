@@ -1056,10 +1056,37 @@ pres.addSection({ title: "원격 화면 보기" });
   card(s, 0.6, 6.15, 6.0, 0.72, "FFF6E5");
   s.addText(
     [
-      { text: "보기 전용 · 같은 네트워크(LAN)  ", options: { bold: true, color: C.accent5 } },
-      { text: "마우스·키보드 제어는 없습니다. 평문으로 보내니 믿을 수 있는 네트워크에서만 쓰세요.", options: { color: C.text1 } },
+      { text: "기본 보기 전용 · 같은 네트워크(LAN)  ", options: { bold: true, color: C.accent5 } },
+      { text: "제어는 호스트가 허용했을 때만 됩니다(다음 장). 평문으로 보내니 믿을 수 있는 네트워크에서만 쓰세요.", options: { color: C.text1 } },
     ],
     { x: 0.8, y: 6.15, w: 5.65, h: 0.72, fontSize: 12.5, valign: "middle", margin: 0, isTextBox: true, objectName: "rvNotice" }
+  );
+}
+
+// ===== 원격 화면 보기 — 원격 제어 =====
+{
+  const s = contentSlide("원격 화면 보기", "기능 9 · 원격 화면 보기", "원격 제어 (호스트가 허용했을 때)");
+  screenshot(s, "img_remote-2.png", 0.6, 1.55, 6.2, 1166, 300, "원격 화면 보기 공유 화면의 '원격 제어 허용' 체크박스와 안내: 끄면 즉시 제어 중단, PIN 을 아는 사람은 누구나 제어 가능, UAC·잠금 화면은 제어 안 됨");
+  const cards = [
+    [String.fromCharCode(0xE72E), C.accent4, "호스트가 허용", "[원격 제어 허용]을 켠 동안만 상대가 조작할 수 있습니다. 끄면 즉시 중단되고, 기본값은 꺼짐입니다."],
+    [String.fromCharCode(0xE962), C.accent1, "뷰어가 제어 시작", "허용되면 뷰어에 [제어 시작]이 생깁니다. 누르면 화면 위 마우스·키보드가 상대 PC로 전송됩니다."],
+    [String.fromCharCode(0xE7C1), C.accent5, "한 명만 · Esc", "동시에 한 사람만 제어합니다. 전체 화면에서 Esc 는 전송하지 않고 창을 닫는 용도로 남겨 둡니다."],
+    [String.fromCharCode(0xE946), C.accent4, "안 되는 것", "UAC(관리자) 창·잠금 화면·Ctrl+Alt+Del(보안 화면)은 제어되지 않습니다."],
+  ];
+  cards.forEach(([g, color, t, d], i) => {
+    const y = 1.6 + i * 1.12;
+    card(s, 6.95, y, 5.8, 1.0);
+    iconCircle(s, 7.2, y + 0.24, 0.52, g, color);
+    s.addText(t, { x: 7.85, y: y + 0.12, w: 4.7, h: 0.4, fontSize: 15, bold: true, color: C.text1, margin: 0, isTextBox: true, objectName: nm("rcTitle") });
+    s.addText(d, { x: 7.85, y: y + 0.5, w: 4.7, h: 0.45, fontSize: 12.5, color: C.text2, valign: "top", margin: 0, isTextBox: true, objectName: nm("rcBody") });
+  });
+  card(s, 0.6, 6.15, 6.2, 0.72, "FDECEC");
+  s.addText(
+    [
+      { text: "주의  ", options: { bold: true, color: C.accent4 } },
+      { text: "PIN 을 아는 사람이면 누구나 제어할 수 있습니다. 믿을 수 있는 상대에게만, 같은 네트워크(LAN)에서만 쓰세요.", options: { color: C.text1 } },
+    ],
+    { x: 0.8, y: 6.15, w: 5.85, h: 0.72, fontSize: 12.5, valign: "middle", margin: 0, isTextBox: true, objectName: "rcWarn" }
   );
 }
 

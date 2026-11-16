@@ -49,6 +49,9 @@ public sealed class RemoteFullScreenWindow : Window
         grid.Children.Add(hint);
         Content = grid;
 
+        // 제어 중이면 이 창 위의 마우스·키보드를 상대 PC 로 보냅니다 (Esc 는 제외 → 닫기).
+        RemoteInput.Attach(image, this, vm);
+
         KeyDown += (_, e) =>
         {
             if (e.Key == Key.Escape)

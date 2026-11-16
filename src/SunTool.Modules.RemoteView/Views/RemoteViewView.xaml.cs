@@ -8,9 +8,24 @@ public partial class RemoteViewView : UserControl
 {
     private RemoteFullScreenWindow? _fullScreen;
 
+    private bool _inputAttached;
+
     public RemoteViewView()
     {
         InitializeComponent();
+        DataContextChanged += (_, _) => AttachInput();
+        Loaded += (_, _) => AttachInput();
+    }
+
+    private void AttachInput()
+    {
+        if (_inputAttached || DataContext is not RemoteViewViewModel vm)
+        {
+            return;
+        }
+
+        _inputAttached = true;
+        RemoteInput.Attach(RemoteImageElement, RemoteImageElement, vm);
     }
 
     private void FullScreen_Click(object sender, RoutedEventArgs e)

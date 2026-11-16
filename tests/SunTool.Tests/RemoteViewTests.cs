@@ -82,6 +82,98 @@ public class RemoteViewTests
         Assert.False(RemoteProtocol.TryDecodeFrame(RemoteProtocol.EncodeHelloError(), out _));
     }
 
+    // ===== 제어·입력 (버전 2) =====
+
+    [Fact]
+    public void Version_IsTwo()
+    {
+        Assert.Equal(2, RemoteProtocol.Version);
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void ControlGrant_RoundTrips(bool granted)
+    {
+        var payload = RemoteProtocol.EncodeControlGrant(granted);
+        Assert.Equal(RemoteProtocol.MsgType.ControlGrant, RemoteProtocol.TypeOf(payload));
+        Assert.True(RemoteProtocol.TryDecodeControlGrant(payload, out var back));
+        Assert.Equal(granted, back);
+    }
+
+    [Fact]
+    public void InputMouse_RoundTrips()
+    {
+        var payload = RemoteProtocol.EncodeInputMouse(RemoteProtocol.MouseAction.Wheel, 0.25f, 0.75f, -120);
+        Assert.Equal(RemoteProtocol.MsgType.InputMouse, RemoteProtocol.TypeOf(payload));
+        Assert.True(RemoteProtocol.TryDecodeInputMouse(payload, out var action, out var nx, out var ny, out var data));
+        Assert.Equal(RemoteProtocol.MouseAction.Wheel, action);
+        Assert.Equal(0.25f, nx);
+        Assert.Equal(0.75f, ny);
+        Assert.Equal(-120, data);
+    }
+
+    [Fact]
+    public void InputKey_RoundTrips()
+    {
+        var payload = RemoteProtocol.EncodeInputKey(0x41, down: true, modifiers: 0x0004);
+        Assert.Equal(RemoteProtocol.MsgType.InputKey, RemoteProtocol.TypeOf(payload));
+        Assert.True(RemoteProtocol.TryDecodeInputKey(payload, out var vk, out var down, out var mods));
+        Assert.Equal(0x41, vk);
+        Assert.True(down);
+        Assert.Equal(0x0004, mods);
+    }
+
+    [Fact]
+    public void InputDecode_RejectsWrongType()
+    {
+        Assert.False(RemoteProtocol.TryDecodeInputMouse(RemoteProtocol.EncodeHelloError(), out _, out _, out _, out _));
+        Assert.False(RemoteProtocol.TryDecodeInputKey(RemoteProtocol.EncodeFrame([1]), out _, out _, out _));
+        Assert.False(RemoteProtocol.TryDecodeControlGrant(RemoteProtocol.EncodeFrame([1]), out _));
+    }
+
+    // ===== 좌표 매핑 (뷰어 입력) =====
+
+    [Fact]
+    public void DisplayToUnit_Center_NoLetterbox()
+    {
+        // 이미지 비율과 표시 영역 비율이 같으면 여백이 없습니다.
+        var (u, v, inside) = InputMapping.DisplayToUnit(100, 50, 200, 100, 1920, 960);
+        Assert.True(inside);
+        Assert.Equal(0.5, u, 3);
+        Assert.Equal(0.5, v, 3);
+    }
+
+    [Fact]
+    public void DisplayToUnit_Letterbox_MapsContentAndRejectsMargin()
+    {
+        // 16:9 이미지를 정사각 1000x1000 에 Uniform → 위아래 여백(각 218.75px).
+        var (_, vTop, insideTop) = InputMapping.DisplayToUnit(500, 100, 1000, 1000, 1920, 1080);
+        Assert.False(insideTop); // 위쪽 여백은 콘텐츠 밖
+
+        var (u, v, inside) = InputMapping.DisplayToUnit(500, 500, 1000, 1000, 1920, 1080);
+        Assert.True(inside);
+        Assert.Equal(0.5, u, 3);
+        Assert.Equal(0.5, v, 3);
+    }
+
+    [Fact]
+    public void ToFull_WholeImage_Identity()
+    {
+        var (nx, ny) = InputMapping.ToFull(0.5, 0.25, 0, 0, 0, 0, 1920, 1080);
+        Assert.Equal(0.5f, nx, 3);
+        Assert.Equal(0.25f, ny, 3);
+    }
+
+    [Fact]
+    public void ToFull_SecondMonitorCrop_OffsetsIntoFullImage()
+    {
+        // 전체 3200x1080, 두 번째 모니터 크롭 (1920,0,1280,1080). 크롭 중앙(0.5,0.5) → 전체에서 오른쪽 모니터 중앙.
+        var (nx, ny) = InputMapping.ToFull(0.5, 0.5, 1920, 0, 1280, 1080, 3200, 1080);
+        Assert.Equal((1920 + 0.5 * 1280) / 3200f, nx, 4); // = 0.8
+        Assert.Equal(0.5f, ny, 4);
+    }
+
     // ===== PIN =====
 
     [Fact]
