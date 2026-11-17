@@ -11,7 +11,7 @@ public sealed class FolderReplicatorModule : IToolModule
 
     public string DisplayName => Loc.T("폴더 구조 복제");
 
-    public string Description => Loc.T("폴더 트리를 그대로 만들고, 체크한 폴더는 바로 아래 파일만 복사합니다 (그 안의 하위 폴더 내용은 제외).");
+    public string Description => Loc.T("폴더 트리를 만들고, 폴더마다 복사 방식을 고릅니다: 폴더만 · 폴더+파일 · 제외.");
 
     public string IconGlyph => "";
 

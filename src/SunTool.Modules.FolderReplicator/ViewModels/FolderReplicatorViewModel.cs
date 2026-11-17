@@ -23,7 +23,6 @@ public sealed partial class FolderReplicatorViewModel : ObservableObject
     private CancellationTokenSource? _cts;
     private FolderNode? _rootModel;
     private bool _loadingSettings;
-    private int _selectedCount;
 
     public FolderReplicatorViewModel(ILogService logs, IDialogService dialogs, ISettingsService settings)
     {
@@ -195,7 +194,7 @@ public sealed partial class FolderReplicatorViewModel : ObservableObject
     {
         foreach (var node in _allNodes)
         {
-            node.IsChecked = true;
+            node.CopyMode = NodeCopyMode.FolderAndFiles;
         }
     }
 
@@ -204,7 +203,7 @@ public sealed partial class FolderReplicatorViewModel : ObservableObject
     {
         foreach (var node in _allNodes)
         {
-            node.IsChecked = false;
+            node.CopyMode = NodeCopyMode.FolderOnly;
         }
     }
 
@@ -344,10 +343,10 @@ public sealed partial class FolderReplicatorViewModel : ObservableObject
 
     private async Task LoadSourceAsync(string folder)
     {
-        // 같은 폴더를 다시 스캔하면 이전 선택을 유지합니다.
-        var previousSelection = _rootModel is not null
-                                && string.Equals(_rootModel.FullPath, PathUtil.Normalize(folder), StringComparison.OrdinalIgnoreCase)
-            ? GetSelectedRelativePaths()
+        // 같은 폴더를 다시 스캔하면 이전 모드 선택을 유지합니다.
+        var previousModes = _rootModel is not null
+                            && string.Equals(_rootModel.FullPath, PathUtil.Normalize(folder), StringComparison.OrdinalIgnoreCase)
+            ? GetModes()
             : null;
 
         IsBusy = true;
@@ -363,14 +362,14 @@ public sealed partial class FolderReplicatorViewModel : ObservableObject
 
             _rootModel = root;
             SourcePath = root.FullPath;
-            BuildTree(root, previousSelection);
+            BuildTree(root, previousModes);
             OnPropertyChanged(nameof(TargetPreview));
             PlanSummary = null;
 
             var errors = _allNodes.Count(n => n.HasError);
             StatusText = Loc.F("폴더 {0:N0}개를 읽었습니다 ({1:0.0}초)", _allNodes.Count, stopwatch.Elapsed.TotalSeconds) +
                          (errors > 0 ? Loc.F(", 읽기 실패 {0}개", errors) : string.Empty) +
-                         Loc.T(". 파일을 복사할 폴더를 체크하세요.");
+                         Loc.T(". 폴더마다 복사 방식을 정하세요 (폴더만 · 폴더+파일 · 제외).");
             _log.Info($"스캔 완료: {root.FullPath} — 폴더 {_allNodes.Count:N0}개, {stopwatch.ElapsedMilliseconds}ms");
         }
         catch (OperationCanceledException)
@@ -393,43 +392,51 @@ public sealed partial class FolderReplicatorViewModel : ObservableObject
         }
     }
 
-    private void BuildTree(FolderNode root, HashSet<string>? previousSelection)
+    private void BuildTree(FolderNode root, IReadOnlyDictionary<string, NodeCopyMode>? previousModes)
     {
         RootNodes.Clear();
         _allNodes.Clear();
-        _selectedCount = 0;
 
-        var rootViewModel = new FolderNodeViewModel(root, null, OnNodeCheckedChanged) { IsExpanded = true };
+        var rootViewModel = new FolderNodeViewModel(root, null, OnNodeModeChanged) { IsExpanded = true };
         _allNodes.AddRange(rootViewModel.DescendantsAndSelf());
         RootNodes.Add(rootViewModel);
 
-        if (previousSelection is not null)
+        if (previousModes is not null)
         {
-            foreach (var node in _allNodes.Where(n => previousSelection.Contains(n.RelativePath)))
+            foreach (var node in _allNodes)
             {
-                node.IsChecked = true;
+                if (previousModes.TryGetValue(node.RelativePath, out var mode))
+                {
+                    node.CopyMode = mode;
+                }
             }
         }
 
         UpdateSelectionSummary();
     }
 
-    private void OnNodeCheckedChanged(FolderNodeViewModel node, bool isChecked)
+    private void OnNodeModeChanged(FolderNodeViewModel node)
     {
-        _selectedCount += isChecked ? 1 : -1;
         UpdateSelectionSummary();
         PlanSummary = null;
     }
 
     private void UpdateSelectionSummary()
     {
-        SelectionSummary = _allNodes.Count == 0
-            ? Loc.T("선택된 폴더 없음")
-            : Loc.F("전체 폴더 {0:N0}개 중 {1:N0}개 선택 (선택한 폴더의 바로 아래 파일만 복사)", _allNodes.Count, _selectedCount);
+        if (_allNodes.Count == 0)
+        {
+            SelectionSummary = Loc.T("선택된 폴더 없음");
+            return;
+        }
+
+        var withFiles = _allNodes.Count(n => n.CopyMode == NodeCopyMode.FolderAndFiles);
+        var excluded = _allNodes.Count(n => n.CopyMode == NodeCopyMode.Exclude);
+        SelectionSummary = Loc.F("전체 폴더 {0:N0}개 · 폴더+파일 {1:N0}개 · 제외 {2:N0}개", _allNodes.Count, withFiles, excluded);
     }
 
-    private HashSet<string> GetSelectedRelativePaths() =>
-        _allNodes.Where(n => n.IsChecked).Select(n => n.RelativePath).ToHashSet(StringComparer.OrdinalIgnoreCase);
+    private Dictionary<string, NodeCopyMode> GetModes() =>
+        _allNodes.Where(n => n.CopyMode != NodeCopyMode.FolderOnly)
+                 .ToDictionary(n => n.RelativePath, n => n.CopyMode, StringComparer.OrdinalIgnoreCase);
 
     private ReplicationOptions CreateOptions() => new()
     {
@@ -456,13 +463,13 @@ public sealed partial class FolderReplicatorViewModel : ObservableObject
         }
 
         var root = _rootModel;
-        var selected = GetSelectedRelativePaths();
+        var modes = GetModes();
         IsBusy = true;
         IsProgressIndeterminate = true;
         StatusText = Loc.T("복사 계획을 계산하는 중...");
         try
         {
-            var plan = await Task.Run(() => ReplicationPlanner.Build(root, selected, options, _log));
+            var plan = await Task.Run(() => ReplicationPlanner.Build(root, modes, options, _log));
             foreach (var warning in plan.Warnings)
             {
                 _log.Warn(warning);

@@ -1,5 +1,18 @@
 namespace SunTool.Modules.FolderReplicator.Logic;
 
+/// <summary>폴더별 복사 방식 (클릭할 때마다 순환).</summary>
+public enum NodeCopyMode
+{
+    /// <summary>폴더만 대상에 생성, 파일은 복사하지 않음 (기본).</summary>
+    FolderOnly,
+
+    /// <summary>폴더 생성 + 그 폴더 바로 아래 파일까지 복사.</summary>
+    FolderAndFiles,
+
+    /// <summary>폴더도 파일도 만들지 않음 (하위 폴더까지 전부 제외).</summary>
+    Exclude,
+}
+
 /// <summary>대상 위치에 같은 이름의 파일이 있을 때의 처리 방식.</summary>
 public enum ConflictPolicy
 {

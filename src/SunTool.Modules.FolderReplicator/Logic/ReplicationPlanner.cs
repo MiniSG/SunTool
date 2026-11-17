@@ -5,9 +5,10 @@ using SunTool.Core.Logging;
 namespace SunTool.Modules.FolderReplicator.Logic;
 
 /// <summary>
-/// 복제 계획을 세웁니다.
-/// - 모든 폴더(숨김 제외 옵션 적용)는 대상에 그대로 생성
-/// - 선택된 폴더는 "바로 아래 파일"만 복사 (그 안의 하위 폴더 내용은 선택 여부에 따름)
+/// 복제 계획을 세웁니다. 폴더별 모드(<see cref="NodeCopyMode"/>)에 따라:
+/// - FolderOnly(기본): 폴더만 대상에 생성
+/// - FolderAndFiles: 폴더 생성 + "바로 아래 파일" 복사
+/// - Exclude: 폴더·파일 모두 제외하고 그 하위 트리 전체를 건너뜀
 /// </summary>
 public static class ReplicationPlanner
 {
@@ -53,7 +54,7 @@ public static class ReplicationPlanner
 
     public static ReplicationPlan Build(
         FolderNode root,
-        IReadOnlySet<string> selectedRelativePaths,
+        IReadOnlyDictionary<string, NodeCopyMode> modes,
         ReplicationOptions options,
         IAppLogger? log = null,
         CancellationToken cancellationToken = default)
@@ -70,7 +71,15 @@ public static class ReplicationPlanner
             cancellationToken.ThrowIfCancellationRequested();
             var node = stack.Pop();
 
-            // 숨김/시스템 폴더는 하위 트리 전체를 제외 (루트는 예외)
+            var mode = modes.TryGetValue(node.RelativePath, out var m) ? m : NodeCopyMode.FolderOnly;
+
+            // 제외한 폴더는 하위 트리 전체를 건너뜁니다 (부모를 안 만들면 자식도 만들 수 없으므로).
+            if (mode == NodeCopyMode.Exclude)
+            {
+                continue;
+            }
+
+            // 숨김/시스템 폴더도 하위 트리 전체를 제외 (루트는 예외)
             if (!node.IsRoot && options.SkipHidden && node.IsHiddenOrSystem)
             {
                 continue;
@@ -81,7 +90,7 @@ public static class ReplicationPlanner
                 : Path.Combine(destinationBase, node.RelativePath);
             plan.Folders.Add(destinationFolder);
 
-            if (selectedRelativePaths.Contains(node.RelativePath))
+            if (mode == NodeCopyMode.FolderAndFiles)
             {
                 plan.SelectedFolderCount++;
                 AddFiles(node, destinationFolder, options, filter, plan, log);

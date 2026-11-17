@@ -23,9 +23,9 @@ public class FolderReplicatorTests
         var root = FolderScanner.Scan(source);
         Assert.Equal(4, root.DescendantsAndSelf().Count()); // Source, A, Sub, B
 
-        var selected = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "A" }; // A 만 선택
+        var modes = Modes(("A", NodeCopyMode.FolderAndFiles)); // A 는 폴더+파일
         var options = new ReplicationOptions { DestinationRoot = destination, CreateRootFolder = true, SkipHidden = true };
-        var plan = ReplicationPlanner.Build(root, selected, options);
+        var plan = ReplicationPlanner.Build(root, modes, options);
         var result = ReplicationExecutor.Execute(plan, ConflictPolicy.Skip);
 
         Assert.False(result.Cancelled);
@@ -48,12 +48,36 @@ public class FolderReplicatorTests
         temp.File(@"Dest\x.txt", "old");
         var root = FolderScanner.Scan(Path.Combine(temp.Path, "Source"));
         var options = new ReplicationOptions { DestinationRoot = Path.Combine(temp.Path, "Dest"), CreateRootFolder = false };
-        var plan = ReplicationPlanner.Build(root, new HashSet<string> { string.Empty }, options);
+        var plan = ReplicationPlanner.Build(root, Modes((string.Empty, NodeCopyMode.FolderAndFiles)), options);
 
         ReplicationExecutor.Execute(plan, ConflictPolicy.KeepBoth);
 
         Assert.Equal("old", File.ReadAllText(Path.Combine(temp.Path, "Dest", "x.txt")));
         Assert.Equal("new", File.ReadAllText(Path.Combine(temp.Path, "Dest", "x (2).txt")));
+    }
+
+    [Fact]
+    public void Replicate_ExcludedFolder_SkipsItAndItsSubtree()
+    {
+        using var temp = new TempFolder();
+        temp.File(@"Source\A\a1.txt");
+        temp.File(@"Source\A\Sub\deep.txt");
+        temp.File(@"Source\B\b1.txt");
+        var source = Path.Combine(temp.Path, "Source");
+        var destination = temp.Dir("Dest");
+
+        var root = FolderScanner.Scan(source);
+        // A 를 제외 → A 와 A\Sub 는 생성조차 안 됨. B 는 폴더만 생성(파일 복사 안 함).
+        var modes = Modes(("A", NodeCopyMode.Exclude));
+        var options = new ReplicationOptions { DestinationRoot = destination, CreateRootFolder = true, SkipHidden = true };
+        var plan = ReplicationPlanner.Build(root, modes, options);
+        ReplicationExecutor.Execute(plan, ConflictPolicy.Skip);
+
+        var target = Path.Combine(destination, "Source");
+        Assert.False(Directory.Exists(Path.Combine(target, "A")));
+        Assert.False(Directory.Exists(Path.Combine(target, "A", "Sub")));
+        Assert.True(Directory.Exists(Path.Combine(target, "B")));
+        Assert.False(File.Exists(Path.Combine(target, "B", "b1.txt")));
     }
 
     [Fact]
@@ -64,4 +88,7 @@ public class FolderReplicatorTests
         Assert.NotNull(ReplicationPlanner.Validate(source, Path.Combine(source, "inner")));
         Assert.Null(ReplicationPlanner.Validate(source, temp.Dir("Other")));
     }
+
+    private static Dictionary<string, NodeCopyMode> Modes(params (string Path, NodeCopyMode Mode)[] entries) =>
+        entries.ToDictionary(e => e.Path, e => e.Mode, StringComparer.OrdinalIgnoreCase);
 }
