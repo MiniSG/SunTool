@@ -58,6 +58,7 @@ public sealed class ScreenSource : IDisposable
         using (var g = Graphics.FromImage(raw))
         {
             g.CopyFromScreen(vs.Left, vs.Top, 0, 0, vs.Size, CopyPixelOperation.SourceCopy);
+            DrawCursor(g, vs);
         }
 
         Bitmap toEncode = raw;
@@ -92,6 +93,37 @@ public sealed class ScreenSource : IDisposable
     {
     }
 
+    /// <summary>현재 마우스 커서를 프레임(가상화면 기준)에 그려 넣습니다. 뷰어가 어디를 가리키는지 보이도록.</summary>
+    private static void DrawCursor(Graphics g, Rectangle vs)
+    {
+        var ci = new CURSORINFO { cbSize = Marshal.SizeOf<CURSORINFO>() };
+        if (!GetCursorInfo(ref ci) || ci.flags != CURSOR_SHOWING || ci.hCursor == IntPtr.Zero)
+        {
+            return;
+        }
+
+        int hotX = 0, hotY = 0;
+        if (GetIconInfo(ci.hCursor, out var ii))
+        {
+            hotX = ii.xHotspot;
+            hotY = ii.yHotspot;
+            if (ii.hbmMask != IntPtr.Zero) { DeleteObject(ii.hbmMask); }
+            if (ii.hbmColor != IntPtr.Zero) { DeleteObject(ii.hbmColor); }
+        }
+
+        var x = ci.ptScreenPos.X - vs.Left - hotX;
+        var y = ci.ptScreenPos.Y - vs.Top - hotY;
+        var hdc = g.GetHdc();
+        try
+        {
+            DrawIconEx(hdc, x, y, ci.hCursor, 0, 0, 0, IntPtr.Zero, DI_NORMAL);
+        }
+        finally
+        {
+            g.ReleaseHdc(hdc);
+        }
+    }
+
     private (int Width, int Height, double Scale) Scaled(Rectangle vs)
     {
         if (_maxWidth > 0 && vs.Width > _maxWidth)
@@ -121,6 +153,47 @@ public sealed class ScreenSource : IDisposable
     private const int SM_YVIRTUALSCREEN = 77;
     private const int SM_CXVIRTUALSCREEN = 78;
     private const int SM_CYVIRTUALSCREEN = 79;
+
+    private const int CURSOR_SHOWING = 0x00000001;
+    private const int DI_NORMAL = 0x0003;
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct CURSORINFO
+    {
+        public int cbSize;
+        public int flags;
+        public IntPtr hCursor;
+        public POINTAPI ptScreenPos;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct POINTAPI
+    {
+        public int X;
+        public int Y;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct ICONINFO
+    {
+        public bool fIcon;
+        public int xHotspot;
+        public int yHotspot;
+        public IntPtr hbmMask;
+        public IntPtr hbmColor;
+    }
+
+    [DllImport("user32.dll")]
+    private static extern bool GetCursorInfo(ref CURSORINFO pci);
+
+    [DllImport("user32.dll")]
+    private static extern bool GetIconInfo(IntPtr hIcon, out ICONINFO piconinfo);
+
+    [DllImport("user32.dll")]
+    private static extern bool DrawIconEx(IntPtr hdc, int x, int y, IntPtr hIcon, int cx, int cy, int istepIfAniCur, IntPtr hbrFlickerFreeDraw, int diFlags);
+
+    [DllImport("gdi32.dll")]
+    private static extern bool DeleteObject(IntPtr hObject);
 
     [StructLayout(LayoutKind.Sequential)]
     private struct RECT

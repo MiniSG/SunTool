@@ -59,6 +59,7 @@
   "제어 시작": "Take control",
   "제어 중지": "Stop control",
   "보기 전용입니다. 호스트가 제어를 허용하면 조작할 수 있습니다.": "View-only. You can control once the host allows it.",
+  "여러 모니터입니다. 제어하려면 위에서 볼 모니터를 하나 선택하세요.": "Multiple monitors. To control, pick a single monitor above first.",
   "제어 중입니다. 이 화면 위의 마우스·키보드가 상대 PC로 전송됩니다.": "Controlling. Mouse and keyboard over this view are sent to the other PC.",
   "제어가 허용되었습니다. [제어 시작]을 누르면 조작할 수 있습니다.": "Control allowed. Press [Take control] to operate the other PC.",
   "호스트가 제어를 허용했습니다. [제어 시작]으로 조작할 수 있습니다.": "The host allowed control. Use [Take control] to operate it."

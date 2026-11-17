@@ -1,6 +1,7 @@
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Interop;
 using System.Windows.Media.Imaging;
 using SunTool.Modules.RemoteView.Logic;
 using SunTool.Modules.RemoteView.ViewModels;
@@ -144,6 +145,63 @@ public static class RemoteInput
 
         keySource.PreviewKeyDown += (_, e) => OnKey(vm, e, down: true);
         keySource.PreviewKeyUp += (_, e) => OnKey(vm, e, down: false);
+
+        // 한/영(VK 0x15)·한자(0x19) 토글은 WPF 관리형 라우팅이 삼켜(ImeProcessed, 복원 키 없음) 전송되지 않습니다.
+        // 창의 원시 메시지(WM_KEYDOWN/UP)에서 직접 가로채 전송합니다.
+        if (keySource is FrameworkElement fe)
+        {
+            var hookInstalled = false;
+            void InstallImeKeyHook()
+            {
+                if (hookInstalled || PresentationSource.FromVisual(fe) is not HwndSource src)
+                {
+                    return;
+                }
+
+                src.AddHook((IntPtr _, int msg, IntPtr wParam, IntPtr _, ref bool handled) =>
+                {
+                    ImeKeyHook(vm, msg, wParam, ref handled);
+                    return IntPtr.Zero;
+                });
+                hookInstalled = true;
+            }
+
+            if (fe.IsLoaded)
+            {
+                InstallImeKeyHook();
+            }
+
+            fe.Loaded += (_, _) => InstallImeKeyHook();
+        }
+    }
+
+    // 한/영(0x15)·한자(0x19) 토글 키만 원시 메시지에서 직접 전송합니다. handled 로 로컬 IME 전환은 막습니다.
+    private static void ImeKeyHook(RemoteViewViewModel vm, int msg, IntPtr wParam, ref bool handled)
+    {
+        if (!vm.IsControlling)
+        {
+            return;
+        }
+
+        var vk = (int)wParam;
+        if (vk != 0x15 && vk != 0x19)
+        {
+            return;
+        }
+
+        switch (msg)
+        {
+            case 0x0100: // WM_KEYDOWN
+            case 0x0104: // WM_SYSKEYDOWN
+                vm.SendKeyInput((ushort)vk, down: true);
+                handled = true;
+                break;
+            case 0x0101: // WM_KEYUP
+            case 0x0105: // WM_SYSKEYUP
+                vm.SendKeyInput((ushort)vk, down: false);
+                handled = true;
+                break;
+        }
     }
 
     private static void OnKey(RemoteViewViewModel vm, KeyEventArgs e, bool down)
@@ -153,7 +211,13 @@ public static class RemoteInput
             return;
         }
 
-        var key = e.Key == Key.System ? e.SystemKey : e.Key;
+        // Alt 는 SystemKey 로, 한/영·한자 등 IME 가 가로챈 키는 ImeProcessedKey 로 원래 키를 복원합니다.
+        var key = e.Key switch
+        {
+            Key.System => e.SystemKey,
+            Key.ImeProcessed => e.ImeProcessedKey,
+            _ => e.Key,
+        };
 
         // Esc 는 전체 화면 탈출용으로 예약 — 원격으로 보내지 않고 통과시킵니다(항상 빠져나갈 수 있게).
         if (key == Key.Escape)

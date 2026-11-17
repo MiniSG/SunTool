@@ -55,4 +55,14 @@ public static class InputMapping
         var ny = (cropY + v * cropH) / fullH;
         return ((float)Math.Clamp(nx, 0, 1), (float)Math.Clamp(ny, 0, 1));
     }
+
+    /// <summary>
+    /// 이 보기 상태에서 원격 제어를 허용할지 결정합니다.
+    /// 원격이 모니터 여러 대이면 '전체' 모드의 가상 데스크톱 절대좌표가 환경에 따라 어긋나므로,
+    /// 모니터를 하나 골랐을 때만 제어를 허용합니다. 모니터가 1대(또는 미상)면 전체여도 허용합니다.
+    /// </summary>
+    /// <param name="realMonitorCount">원격의 실제 모니터 수('전체' 항목 제외).</param>
+    /// <param name="selectedIndex">고른 모니터 인덱스. 0 이상이면 개별 모니터, 음수면 '전체'.</param>
+    public static bool ControlAllowed(int realMonitorCount, int selectedIndex)
+        => realMonitorCount <= 1 || selectedIndex >= 0;
 }

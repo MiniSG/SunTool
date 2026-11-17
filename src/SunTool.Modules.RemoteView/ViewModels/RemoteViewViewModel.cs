@@ -312,18 +312,25 @@ public sealed partial class RemoteViewViewModel : ObservableObject, IDisposable
     [NotifyPropertyChangedFor(nameof(ControlHintText))]
     private bool _isControlling;
 
-    /// <summary>제어 토글을 쓸 수 있는 상태(연결됨 + 호스트 허용).</summary>
-    public bool CanToggleControl => IsConnected && CanControl;
+    /// <summary>원격이 여러 모니터면 '전체' 모드에서는 좌표가 어긋나므로, 개별 모니터를 골랐을 때만 제어를 허용합니다.</summary>
+    public bool ControlAllowedForView =>
+        InputMapping.ControlAllowed(ViewMonitors.Count - 1, SelectedViewMonitor?.Index ?? -1);
+
+    /// <summary>제어 토글을 쓸 수 있는 상태(연결됨 + 호스트 허용 + 이 보기에서 제어 가능).</summary>
+    public bool CanToggleControl => IsConnected && CanControl && ControlAllowedForView;
 
     public string ControlHintText => !CanControl
         ? Loc.T("보기 전용입니다. 호스트가 제어를 허용하면 조작할 수 있습니다.")
-        : IsControlling
-            ? Loc.T("제어 중입니다. 이 화면 위의 마우스·키보드가 상대 PC로 전송됩니다.")
-            : Loc.T("제어가 허용되었습니다. [제어 시작]을 누르면 조작할 수 있습니다.");
+        : !ControlAllowedForView
+            ? Loc.T("여러 모니터입니다. 제어하려면 위에서 볼 모니터를 하나 선택하세요.")
+            : IsControlling
+                ? Loc.T("제어 중입니다. 이 화면 위의 마우스·키보드가 상대 PC로 전송됩니다.")
+                : Loc.T("제어가 허용되었습니다. [제어 시작]을 누르면 조작할 수 있습니다.");
 
     public System.Collections.ObjectModel.ObservableCollection<ViewMonitorOption> ViewMonitors { get; } = [];
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(CanToggleControl), nameof(ControlHintText), nameof(ControlAllowedForView))]
     private ViewMonitorOption? _selectedViewMonitor;
 
     /// <summary>모니터가 2대 이상일 때만 선택 칸을 보여 줍니다.</summary>
@@ -470,6 +477,12 @@ public sealed partial class RemoteViewViewModel : ObservableObject, IDisposable
         {
             RemoteImage = CropToSelected(_lastFullFrame);
         }
+
+        // 제어 불가한 보기(여러 모니터 + 전체)로 바뀌면 제어를 즉시 멈춥니다.
+        if (!ControlAllowedForView)
+        {
+            IsControlling = false;
+        }
     }
 
     private void OnControlGranted(bool granted) => _dispatcher.BeginInvoke(() =>
@@ -510,7 +523,7 @@ public sealed partial class RemoteViewViewModel : ObservableObject, IDisposable
     /// <summary>제어 중일 때만 마우스 입력을 보냅니다. u,v 는 표시 이미지 기준 0~1.</summary>
     public void SendMouseInput(RemoteProtocol.MouseAction action, double u, double v, int data = 0)
     {
-        if (!IsControlling || !CanControl || _client is null)
+        if (!IsControlling || !CanControl || !ControlAllowedForView || _client is null)
         {
             return;
         }
@@ -523,7 +536,7 @@ public sealed partial class RemoteViewViewModel : ObservableObject, IDisposable
     /// <summary>제어 중일 때만 키 입력을 보냅니다.</summary>
     public void SendKeyInput(ushort vk, bool down)
     {
-        if (!IsControlling || !CanControl || _client is null)
+        if (!IsControlling || !CanControl || !ControlAllowedForView || _client is null)
         {
             return;
         }

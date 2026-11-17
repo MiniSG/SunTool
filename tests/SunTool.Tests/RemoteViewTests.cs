@@ -174,6 +174,19 @@ public class RemoteViewTests
         Assert.Equal(0.5f, ny, 4);
     }
 
+    // ===== 제어 허용 게이팅 =====
+
+    [Theory]
+    [InlineData(1, -1, true)]   // 모니터 1대면 '전체'여도 제어 가능
+    [InlineData(1, 0, true)]
+    [InlineData(2, -1, false)]  // 2대 + '전체'면 제어 불가
+    [InlineData(2, 0, true)]    // 2대 + 개별 선택이면 가능
+    [InlineData(2, 1, true)]
+    [InlineData(3, -1, false)]
+    [InlineData(0, -1, true)]   // 연결 전/모니터 미상은 막지 않음
+    public void ControlAllowed_BlocksAllModeOnlyOnMultiMonitor(int realMonitorCount, int selectedIndex, bool expected)
+        => Assert.Equal(expected, InputMapping.ControlAllowed(realMonitorCount, selectedIndex));
+
     // ===== PIN =====
 
     [Fact]

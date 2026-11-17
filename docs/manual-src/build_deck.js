@@ -1071,7 +1071,7 @@ pres.addSection({ title: "원격 화면 보기" });
     [String.fromCharCode(0xE72E), C.accent4, "호스트가 허용", "[원격 제어 허용]을 켠 동안만 상대가 조작할 수 있습니다. 끄면 즉시 중단되고, 기본값은 꺼짐입니다."],
     [String.fromCharCode(0xE962), C.accent1, "뷰어가 제어 시작", "허용되면 뷰어에 [제어 시작]이 생깁니다. 누르면 화면 위 마우스·키보드가 상대 PC로 전송됩니다."],
     [String.fromCharCode(0xE7C1), C.accent5, "한 명만 · Esc", "동시에 한 사람만 제어합니다. 전체 화면에서 Esc 는 전송하지 않고 창을 닫는 용도로 남겨 둡니다."],
-    [String.fromCharCode(0xE946), C.accent4, "안 되는 것", "UAC(관리자) 창·잠금 화면·Ctrl+Alt+Del(보안 화면)은 제어되지 않습니다."],
+    [String.fromCharCode(0xE946), C.accent4, "로그인된 세션에서만", "호스트가 로그인돼 있어야 합니다. 로그인·잠금 화면, UAC(관리자)·Ctrl+Alt+Del 보안 화면은 공유·제어가 안 됩니다."],
   ];
   cards.forEach(([g, color, t, d], i) => {
     const y = 1.6 + i * 1.12;
