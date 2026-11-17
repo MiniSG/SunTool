@@ -449,13 +449,54 @@ public sealed partial class ScreenCaptureViewModel : ObservableObject
 
     private string EnsureSaveFolder()
     {
-        var folder = string.IsNullOrWhiteSpace(SaveFolder) ? DefaultSaveFolder() : SaveFolder!;
-        Directory.CreateDirectory(folder);
-        return folder;
+        var configured = string.IsNullOrWhiteSpace(SaveFolder) ? DefaultSaveFolder() : SaveFolder!;
+        if (TryCreateFolder(configured))
+        {
+            return configured;
+        }
+
+        // 설정/기본 폴더를 만들 수 없는 환경(예: Pictures 가 OneDrive 로 옮겨져 실제로는 없음)에서는
+        // 확실히 쓸 수 있는 포터블 데이터 폴더로 대체하고, 설정도 그 폴더로 바꿉니다.
+        var fallback = FallbackSaveFolder();
+        Directory.CreateDirectory(fallback);
+        _log.Warn($"저장 폴더를 만들 수 없어 대체 위치로 바꿉니다: {configured} → {fallback}");
+        SaveFolder = fallback;
+        SetStatus(Loc.F("저장 폴더를 만들 수 없어 '{0}' 로 바꿨습니다.", fallback), isError: true);
+        return fallback;
     }
 
-    private static string DefaultSaveFolder() =>
-        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyPictures), "SunTool");
+    private static bool TryCreateFolder(string? folder)
+    {
+        if (string.IsNullOrWhiteSpace(folder))
+        {
+            return false;
+        }
+
+        try
+        {
+            Directory.CreateDirectory(folder);
+            return true;
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException or NotSupportedException)
+        {
+            return false;
+        }
+    }
+
+    private static string DefaultSaveFolder()
+    {
+        // Create 옵션은 알려진 폴더(OneDrive 로 옮겨진 경우 포함)를 실제로 만들어 현재 경로를 돌려줍니다.
+        var pictures = Environment.GetFolderPath(Environment.SpecialFolder.MyPictures, Environment.SpecialFolderOption.Create);
+        if (string.IsNullOrWhiteSpace(pictures))
+        {
+            pictures = Environment.GetFolderPath(Environment.SpecialFolder.MyPictures);
+        }
+
+        return string.IsNullOrWhiteSpace(pictures) ? FallbackSaveFolder() : Path.Combine(pictures, "SunTool");
+    }
+
+    /// <summary>항상 쓸 수 있는 대체 저장 폴더 (포터블 데이터 폴더 아래).</summary>
+    private static string FallbackSaveFolder() => Path.Combine(AppPaths.DataDirectory, "Captures");
 
     // ===================================================================== 파일명 토큰
 

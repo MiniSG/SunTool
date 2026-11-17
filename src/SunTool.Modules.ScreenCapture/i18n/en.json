@@ -34,6 +34,7 @@
   "파일로 저장 (PNG)": "Save to file (PNG)",
   "저장 후 폴더 열기": "Open folder after saving",
   "저장 폴더": "Save folder",
+  "저장 폴더를 만들 수 없어 '{0}' 로 바꿨습니다.": "Couldn't create the save folder, switched to '{0}'.",
   "폴더 열기": "Open folder",
   "찾아보기": "Browse",
   "비워 두면 내 사진 폴더 아래 SunTool 폴더에 저장합니다.": "If left empty, saves to a SunTool folder under your Pictures folder.",
