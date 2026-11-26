@@ -25,6 +25,8 @@ public sealed class RegionSelectWindow : Window
     private readonly Bitmap _fullScreen;
     private readonly Rectangle _virtualScreen;
     private readonly WpfRectangle _selection;
+    private readonly Border _coordReadout;
+    private readonly TextBlock _coordText;
     private Point _start;
     private bool _dragging;
 
@@ -55,8 +57,24 @@ public sealed class RegionSelectWindow : Window
             HorizontalAlignment = HorizontalAlignment.Left,
             VerticalAlignment = VerticalAlignment.Top,
         };
+        _coordText = new TextBlock
+        {
+            Foreground = Brushes.White,
+            FontSize = 12,
+            FontFamily = new System.Windows.Media.FontFamily("Consolas, Segoe UI"),
+        };
+        _coordReadout = new Border
+        {
+            Background = new SolidColorBrush(Color.FromArgb(205, 0, 0, 0)),
+            CornerRadius = new CornerRadius(4),
+            Padding = new Thickness(7, 3, 7, 3),
+            Visibility = Visibility.Collapsed,
+            IsHitTestVisible = false,
+            Child = _coordText,
+        };
         var canvas = new Canvas();
         canvas.Children.Add(_selection);
+        canvas.Children.Add(_coordReadout);
         root.Children.Add(canvas);
 
         var hint = new Border
@@ -154,18 +172,59 @@ public sealed class RegionSelectWindow : Window
 
     private void OnMove(object sender, MouseEventArgs e)
     {
+        var cursor = e.GetPosition(this);
+        UpdateReadout(cursor);
+
         if (!_dragging)
         {
             return;
         }
 
-        var p = e.GetPosition(this);
+        var p = cursor;
         var x = Math.Min(p.X, _start.X);
         var y = Math.Min(p.Y, _start.Y);
         Canvas.SetLeft(_selection, x);
         Canvas.SetTop(_selection, y);
         _selection.Width = Math.Abs(p.X - _start.X);
         _selection.Height = Math.Abs(p.Y - _start.Y);
+    }
+
+    // 커서 옆에 화면 절대 좌표(물리 픽셀)를 표시합니다. 드래그 중이면 선택 크기도 덧붙입니다.
+    private void UpdateReadout(Point cursor)
+    {
+        if (ActualWidth <= 0 || ActualHeight <= 0)
+        {
+            return;
+        }
+
+        var scaleX = _fullScreen.Width / ActualWidth;
+        var scaleY = _fullScreen.Height / ActualHeight;
+        var screenX = _virtualScreen.Left + (int)Math.Round(cursor.X * scaleX);
+        var screenY = _virtualScreen.Top + (int)Math.Round(cursor.Y * scaleY);
+        _coordText.Text = _dragging
+            ? $"{screenX}, {screenY}  ·  {(int)Math.Round(_selection.Width * scaleX)}×{(int)Math.Round(_selection.Height * scaleY)}"
+            : $"{screenX}, {screenY}";
+        _coordReadout.Visibility = Visibility.Visible;
+
+        // 커서 오른쪽 아래에 띄우되, 가장자리에선 반대쪽으로 넘겨 가리지 않게.
+        _coordReadout.Measure(new System.Windows.Size(double.PositiveInfinity, double.PositiveInfinity));
+        var w = _coordReadout.DesiredSize.Width;
+        var h = _coordReadout.DesiredSize.Height;
+        const double gap = 16;
+        var left = cursor.X + gap;
+        var top = cursor.Y + gap;
+        if (left + w > ActualWidth)
+        {
+            left = cursor.X - gap - w;
+        }
+
+        if (top + h > ActualHeight)
+        {
+            top = cursor.Y - gap - h;
+        }
+
+        Canvas.SetLeft(_coordReadout, Math.Max(0, left));
+        Canvas.SetTop(_coordReadout, Math.Max(0, top));
     }
 
     private void OnUp(object sender, MouseButtonEventArgs e)
