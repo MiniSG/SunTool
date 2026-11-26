@@ -24,6 +24,7 @@ public partial class App : Application
     private LogService? _logService;
     private ServiceProvider? _services;
     private IAppLogger _log = NullLogger.Instance;
+    private SingleInstance? _singleInstance;
 
     protected override void OnStartup(StartupEventArgs e)
     {
@@ -44,6 +45,32 @@ public partial class App : Application
         _log.Info($"SunTool 시작 (v{AppInfo.Version}, .NET {Environment.Version}, {(Environment.Is64BitProcess ? "x64" : "x86")})");
         _log.Info($"데이터 위치: {AppPaths.DataDirectory} ({(AppPaths.IsPortable ? "포터블" : "AppData")})");
 
+        // 중복 실행 처리: 이미 실행 중이면 새 창을 열지, 기존 창을 쓸지 묻습니다.
+        // (--relaunch 는 언어 전환 재시작이라 묻지 않고 기존 뮤텍스를 넘겨받습니다.)
+        var isRelaunch = args.Contains("--relaunch");
+        _singleInstance = SingleInstance.Acquire(waitForRelease: isRelaunch);
+        // 뮤텍스(새 버전끼리) 또는 같은 이름의 다른 프로세스(뮤텍스 없는 구버전 포함)로 이미 실행 중인지 봅니다.
+        var alreadyRunning = !_singleInstance.IsFirstInstance || SingleInstance.AnyOtherProcessRunning();
+        if (alreadyRunning && !isRelaunch)
+        {
+            var choice = MessageBox.Show(
+                "SunTool 이 이미 실행 중입니다. 새 창을 하나 더 열까요?\n\n[예] 새 창 열기    [아니요] 기존 창 보기\n\n" +
+                "(SunTool is already running. Open another window?\nYes: open a new window    No: show the existing one)",
+                "SunTool", MessageBoxButton.YesNo, MessageBoxImage.Question);
+            if (choice != MessageBoxResult.Yes)
+            {
+                _log.Info("이미 실행 중 — 기존 창을 앞으로 가져오고 새 인스턴스는 종료");
+                SingleInstance.SignalExistingToForeground();       // 새 버전: 신호로 확실히 활성화
+                SingleInstance.TryActivateOtherProcessWindow();    // 구버전: 창 핸들로 최선 노력 활성화
+                _singleInstance.Dispose();
+                _singleInstance = null;
+                Shutdown(0);
+                return;
+            }
+
+            _log.Info("이미 실행 중 — 사용자가 새 창 열기를 선택");
+        }
+
         try
         {
             _services = ConfigureServices(_logService);
@@ -62,6 +89,13 @@ public partial class App : Application
             if (args.Contains("--console"))
             {
                 _services.GetRequiredService<IConsoleWindowService>().Show();
+            }
+
+            // 최초 인스턴스만, 뒤에 뜨는 두 번째 인스턴스의 "앞으로 와라" 신호를 듣습니다.
+            if (_singleInstance?.IsFirstInstance == true)
+            {
+                _singleInstance.ListenForActivation(() =>
+                    Dispatcher.Invoke(() => (MainWindow as Views.MainWindow)?.BringToForeground()));
             }
         }
         catch (Exception ex)
@@ -83,6 +117,7 @@ public partial class App : Application
         }
         finally
         {
+            _singleInstance?.Dispose();
             _logService?.Dispose();
             base.OnExit(e);
         }

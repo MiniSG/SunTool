@@ -64,10 +64,23 @@ public partial class MainWindow : Window
         }
     }
 
-    private void RestoreFromTray()
+    private void RestoreFromTray() => BringToForeground();
+
+    /// <summary>창을 트레이·최소화에서 꺼내 앞으로 가져옵니다(다른 인스턴스의 요청 포함).</summary>
+    public void BringToForeground()
     {
         Show();
-        WindowState = WindowState.Normal;
+        if (WindowState == WindowState.Minimized)
+        {
+            WindowState = WindowState.Normal;
+        }
+
         Activate();
+
+        // 다른 프로세스의 신호로 호출될 때도 확실히 맨 앞으로 오도록 잠깐 Topmost 를 깜빡입니다.
+        var wasTopmost = Topmost;
+        Topmost = true;
+        Topmost = wasTopmost;
+        Focus();
     }
 }

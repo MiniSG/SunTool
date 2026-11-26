@@ -116,7 +116,12 @@ public sealed partial class MainViewModel : ObservableObject
             return;
         }
 
-        System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(exe) { UseShellExecute = false });
+        // --relaunch: 중복 실행 확인을 건너뛰고 기존 뮤텍스를 넘겨받아 깨끗이 다시 시작합니다.
+        System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(exe)
+        {
+            UseShellExecute = false,
+            Arguments = "--relaunch",
+        });
         System.Windows.Application.Current.Shutdown();
     }
 
