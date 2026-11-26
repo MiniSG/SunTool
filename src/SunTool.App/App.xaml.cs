@@ -27,6 +27,12 @@ public partial class App : Application
 
     protected override void OnStartup(StartupEventArgs e)
     {
+        // 단일 exe 배포에서 PenImc_cor3.dll(펜/스타일러스 네이티브) 로드 실패로 생기는 크래시 방지.
+        // 장치·디스플레이 변경(예: 크롬 원격 데스크톱 연결) 시 WPF 가 구형 WISP 스타일러스 스택으로
+        // 태블릿 장치를 다시 조회하다 penimc 를 못 찾는 문제가 있어, WM_POINTER 스택을 쓰게 바꿉니다.
+        // 펜/터치를 쓰지 않는 앱이라 마우스·키보드 입력에는 영향이 없습니다. 첫 창이 뜨기 전에 설정해야 합니다.
+        AppContext.SetSwitch("Switch.System.Windows.Input.Stylus.EnablePointerSupport", true);
+
         base.OnStartup(e);
 
         var args = e.Args.Select(a => a.ToLowerInvariant()).ToHashSet();
