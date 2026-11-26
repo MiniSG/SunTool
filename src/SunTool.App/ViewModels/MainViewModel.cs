@@ -129,6 +129,22 @@ public sealed partial class MainViewModel : ObservableObject
     private void ToggleConsole() => _console.Toggle();
 
     [RelayCommand]
+    private void OpenManual()
+    {
+        try
+        {
+            var path = ManualFile.Extract();
+            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(path) { UseShellExecute = true });
+            _log.Info($"매뉴얼 열기: {path}");
+        }
+        catch (Exception ex)
+        {
+            _log.Error("매뉴얼을 열지 못했습니다.", ex);
+            _dialogs.ShowWarning(Loc.F("매뉴얼을 열지 못했습니다.\n\n{0}", ex.Message));
+        }
+    }
+
+    [RelayCommand]
     private void ResetCounters()
     {
         WarningCount = 0;

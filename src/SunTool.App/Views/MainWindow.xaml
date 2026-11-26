@@ -112,10 +112,10 @@
                             <TextBlock Text="{Binding ErrorCount}" Margin="4,0,0,0" VerticalAlignment="Center" />
                         </StackPanel>
                     </Button>
-                    <Button Command="{Binding ToggleConsoleCommand}" Padding="10,2" ToolTip="{l:T '디버그 터미널 열기/닫기 (F12)'}">
+                    <Button Command="{Binding OpenManualCommand}" Padding="10,2" ToolTip="{l:T '사용 설명서(매뉴얼 PDF)를 엽니다'}">
                         <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="&#xE756;" FontFamily="{StaticResource IconFont}" VerticalAlignment="Center" Margin="0,0,6,0" />
-                            <TextBlock Text="{l:T '터미널'}" VerticalAlignment="Center" />
+                            <TextBlock Text="&#xE897;" FontFamily="{StaticResource IconFont}" VerticalAlignment="Center" Margin="0,0,6,0" />
+                            <TextBlock Text="{l:T '도움말'}" VerticalAlignment="Center" />
                         </StackPanel>
                     </Button>
                 </StackPanel>

@@ -25,6 +25,13 @@
     <Resource Include="Assets\SunTool-256.png" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- 도움말용 매뉴얼 PDF 를 exe 에 포함(포터블 단일 exe 에서도 도움말로 열 수 있게). -->
+    <EmbeddedResource Include="..\..\docs\SunTool-Manual.pdf">
+      <LogicalName>SunTool-Manual.pdf</LogicalName>
+    </EmbeddedResource>
+  </ItemGroup>
+
   <!-- 포터블 단일 exe 배포는 저장소 루트의 publish.ps1 참고 -->
 
   <ItemGroup>
